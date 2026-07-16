@@ -248,7 +248,7 @@ async function checkLogin(){
   }
 
   // ── 선생님 로그인 (이름 '소미쌤' + 비번 일치) ──
-  if(inputName==='소미쌤'&&inputPw===teacherPw()){
+  if(inputName==='이종원'&&inputPw===teacherPw()){
     if(saveFlag){
       const ua=navigator.userAgent;
       const isIpadOS=/Macintosh/.test(ua)&&navigator.maxTouchPoints>1;
@@ -479,7 +479,7 @@ document.addEventListener('DOMContentLoaded',async function(){
     try{
       const{initializeApp,getApps}=await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js");
       const{getFirestore,doc,getDoc,setDoc}=await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js");
-      const FB_CONFIG={apiKey:"AIzaSyCgCdb1pNtcTxEp7APdUW-aeOsJ33v1IhI",authDomain:"somi-ssam.firebaseapp.com",projectId:"somi-ssam",storageBucket:"somi-ssam.firebasestorage.app",messagingSenderId:"841594074779",appId:"1:841594074779:web:c37fd00db5a8883cf0f83e"};
+      const FB_CONFIG={apiKey:"AIzaSyDd5AF3oPb9oj43FwvnT3fT1tVoreDgB0M",authDomain:"vocal-practice.firebaseapp.com",projectId:"vocal-practice",storageBucket:"vocal-practice.firebasestorage.app",messagingSenderId:"295123245481",appId:"1:295123245481:web:704fab7acffbece6b30cb8"};
       const APP_NAME='somi-index-v2';
       const fbApp=getApps().find(a=>a.name===APP_NAME)||initializeApp(FB_CONFIG,APP_NAME);
       const fsDb=getFirestore(fbApp);

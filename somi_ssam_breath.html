@@ -345,7 +345,7 @@ async function labRefresh() {
   try {
     const { initializeApp, getApps } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js");
     const { getFirestore, doc, getDoc } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js");
-    const FB_CONFIG={apiKey:"AIzaSyCgCdb1pNtcTxEp7APdUW-aeOsJ33v1IhI",authDomain:"somi-ssam.firebaseapp.com",projectId:"somi-ssam",storageBucket:"somi-ssam.firebasestorage.app",messagingSenderId:"841594074779",appId:"1:841594074779:web:c37fd00db5a8883cf0f83e"};
+    const FB_CONFIG={apiKey:"AIzaSyDd5AF3oPb9oj43FwvnT3fT1tVoreDgB0M",authDomain:"vocal-practice.firebaseapp.com",projectId:"vocal-practice",storageBucket:"vocal-practice.firebasestorage.app",messagingSenderId:"295123245481",appId:"1:295123245481:web:704fab7acffbece6b30cb8"};
     const APP_NAME='somi-breath-v2';
     const fbApp=getApps().find(a=>a.name===APP_NAME)||initializeApp(FB_CONFIG,APP_NAME);
     const fsDb=getFirestore(fbApp);
@@ -1470,12 +1470,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         const { initializeApp } = appMod;
         ({ doc, getDoc, setDoc } = fsMod);
         const fbApp = initializeApp({
-          apiKey: "AIzaSyCgCdb1pNtcTxEp7APdUW-aeOsJ33v1IhI",
-          authDomain: "somi-ssam.firebaseapp.com",
-          projectId: "somi-ssam",
-          storageBucket: "somi-ssam.firebasestorage.app",
-          messagingSenderId: "841594074779",
-          appId: "1:841594074779:web:c37fd00db5a8883cf0f83e"
+          apiKey: "AIzaSyDd5AF3oPb9oj43FwvnT3fT1tVoreDgB0M",
+          authDomain: "vocal-practice.firebaseapp.com",
+          projectId: "vocal-practice",
+          storageBucket: "vocal-practice.firebasestorage.app",
+          messagingSenderId: "295123245481",
+          appId: "1:295123245481:web:704fab7acffbece6b30cb8"
         }, 'somi-breath-v2');
         fsDb = fsMod.getFirestore(fbApp);
       }catch(e){
