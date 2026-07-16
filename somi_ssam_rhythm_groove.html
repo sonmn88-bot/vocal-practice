@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- PWA: 홈 화면 추가 (아이콘/이름은 manifest.json과 icon-*.png 교체로 변경 가능) -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#f5f0e8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="소미쌤">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>리듬 · somi_ssam</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
+
+/* ══════════════════════════════════════
+   CSS 변수 / 테마
+══════════════════════════════════════ */
+:root {
+  --bg:#0a0a0f; --surface:#13131a; --surface2:#1c1c27; --border:#2a2a3d;
+  --accent:#7c6af7; --accent2:#f76ac8; --accent3:#6af7c8; --counting:#f7c26a;
+  --text:#e8e8f0; --text2:#8888aa;
+}
+.theme-ivory {
+  --bg:#f5f0e8; --surface:#fffdf7; --surface2:#f0ebe0; --border:#d8cfc0;
+  --accent:#6b5ce7; --accent2:#e05fa0; --accent3:#2db89a; --counting:#c8960a;
+  --text:#2a2420; --text2:#7a6e60;
+}
+
+/* ══════════════════════════════════════
+   리셋 / 기본
+══════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+button{font-family:inherit;cursor:pointer;}
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ══════════════════════════════════════
+   헤더 (통일 기준)
+══════════════════════════════════════ */
+.lab-header{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.lab-brand{display:flex;flex-direction:column;gap:1px;text-align:right;}
+.lab-brand .brand-title{font-size:1.3rem;font-weight:800;letter-spacing:-0.5px;background:linear-gradient(135deg,var(--accent3),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:'DM Mono',monospace;}
+.lab-brand .brand-sub{font-size:0.65rem;color:var(--text2);letter-spacing:3px;text-transform:uppercase;}
+.rest-dday-header{flex-shrink:0;margin-top:4px;font-size:0.76rem;font-weight:700;color:#7e8aa3;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.rest-dday-header .dot{width:6px;height:6px;border-radius:50%;background:#7e8aa3;flex-shrink:0;}
+.home-link{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);text-decoration:none;font-size:0.85rem;font-weight:500;transition:all 0.2s;font-family:inherit;white-space:nowrap;flex-shrink:0;}
+.home-link:hover{border-color:var(--accent);color:var(--text);}
+
+/* ══════════════════════════════════════
+   패턴 선택 화면
+══════════════════════════════════════ */
+.pattern-select{max-width:600px;margin:0 auto;padding:28px 20px 60px;}
+.select-title{font-size:1.1rem;font-weight:700;margin-bottom:6px;}
+.select-desc{color:var(--text2);font-size:0.82rem;margin-bottom:24px;line-height:1.6;}
+.pattern-cards{display:flex;flex-direction:column;gap:12px;}
+/* 종료반 안개 가림: 래퍼로 높이 자르고 위에 그라데이션 덮기 */
+.ended-fog-wrap{position:relative;overflow:hidden;max-height:62vh;}
+.ended-fog-wrap .pattern-cards{max-height:none;}
+.ended-fog-veil{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;z-index:5;
+  background:linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 28%, var(--bg) 72%, var(--bg) 100%);}
+.theme-ivory .ended-fog-veil{background:linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 28%, var(--bg) 72%, var(--bg) 100%);}
+.ended-fog-dots{position:absolute;left:0;right:0;bottom:10px;z-index:6;text-align:center;color:var(--text2);font-size:1.5rem;letter-spacing:5px;opacity:0.45;pointer-events:none;}
+/* 휴식 디데이 배지 (호흡/발성 공통 - 동그라미 자리) */
+.rest-dday{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:18px;padding:9px 16px;border-radius:12px;background:rgba(126,138,163,0.14);border:1px solid rgba(126,138,163,0.35);color:var(--text2);font-size:0.8rem;font-weight:600;}
+.rest-dday .dot{width:7px;height:7px;border-radius:50%;background:#7e8aa3;}
+
+.pattern-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;cursor:pointer;transition:all 0.2s;position:relative;}
+.pattern-card:hover:not(.locked){border-color:var(--accent);transform:translateX(4px);}
+.pattern-card h3{font-size:0.95rem;font-weight:600;margin-bottom:4px;}
+.pattern-card p{color:var(--text2);font-size:0.78rem;line-height:1.5;}
+.pattern-meta{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center;}
+.meta-tag{font-size:0.68rem;padding:3px 9px;border-radius:20px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.lv-badge{font-size:0.65rem;padding:2px 8px;border-radius:10px;background:rgba(124,106,247,0.15);color:var(--accent);border:1px solid var(--accent);font-weight:600;}
+
+.pattern-card.locked{opacity:0.45;cursor:default;}
+.lock-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.8rem;border-radius:14px;background:rgba(10,10,15,0.18);}
+.theme-ivory .lock-overlay{background:rgba(245,240,232,0.18);}
+
+/* ══════════════════════════════════════
+   연습 화면
+══════════════════════════════════════ */
+#practice-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:200;flex-direction:column;overflow-y:auto;}
+.prac-header{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+.prac-header h2{font-size:0.95rem;font-weight:600;flex:1;}
+.back-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:10px;font-size:0.85rem;font-weight:500;transition:all 0.2s;font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.back-btn:hover{border-color:var(--accent);color:var(--text);}
+.refresh-btn{background:none;border:none;color:var(--text2);width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all 0.2s;padding:0;}
+.refresh-btn:hover{color:var(--accent);}
+.refresh-btn svg{display:block;}
+.prac-body{display:flex;flex-direction:column;align-items:center;padding:24px 20px 52px;gap:22px;max-width:560px;margin:0 auto;width:100%;}
+
+/* 모드 탭 */
+.mode-tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.m-tab{padding:9px 22px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:0.88rem;transition:all 0.2s;}
+.m-tab.active{background:var(--accent);border-color:var(--accent);color:white;font-weight:600;}
+
+/* 박자 행 */
+.beat-row{display:flex;gap:16px;align-items:center;justify-content:center;}
+.beat-num{font-family:'DM Mono',monospace;font-size:2.8rem;font-weight:700;color:var(--border);transition:color 0.08s,text-shadow 0.08s,transform 0.08s;min-width:42px;text-align:center;line-height:1;}
+.beat-num.active-pattern{color:var(--accent3);text-shadow:0 0 24px rgba(106,247,200,0.8),0 0 48px rgba(106,247,200,0.4);transform:scale(1.15);}
+.beat-num.active-counting{color:var(--counting);text-shadow:0 0 24px rgba(247,194,106,0.8);transform:scale(1.15);}
+
+/* 인포박스 */
+.info-box{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:20px 24px;text-align:center;width:100%;max-width:440px;min-height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;}
+.info-action{font-size:2.1rem;font-weight:700;line-height:1.2;}
+.info-sub{font-size:0.85rem;color:var(--text2);}
+
+/* 타이머 */
+.timer-main{font-family:'DM Mono',monospace;font-size:3rem;font-weight:500;letter-spacing:4px;color:var(--text);}
+.timer-main.running{color:var(--accent3);}
+.loop-counter{font-family:'DM Mono',monospace;font-size:0.82rem;color:var(--text2);}
+
+/* 컨트롤 */
+.controls{display:flex;gap:14px;align-items:center;}
+.ctrl-btn{width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;font-size:1.3rem;transition:all 0.2s;display:flex;align-items:center;justify-content:center;}
+.ctrl-btn.reset{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.ctrl-btn.reset:hover{border-color:var(--counting);color:var(--counting);}
+.ctrl-btn.play{background:var(--accent);color:white;width:68px;height:68px;font-size:1.5rem;}
+.ctrl-btn.play:hover{background:#6a58e8;transform:scale(1.05);}
+.ctrl-btn.stop{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.ctrl-btn.stop:hover{border-color:#f76a6a;color:#f76a6a;}
+
+.vol-wrap{width:100%;max-width:360px;display:flex;flex-direction:column;gap:8px;}
+.vol-row{display:flex;align-items:center;gap:10px;font-size:0.78rem;color:var(--text2);}
+.vol-row span{min-width:70px;}
+.vol-row input[type=range]{flex:1;accent-color:var(--accent3);cursor:pointer;}
+
+/* 준비 중 메시지 */
+.coming-soon{text-align:center;padding:60px 20px;color:var(--text2);}
+.coming-soon .icon{font-size:3rem;margin-bottom:16px;}
+.coming-soon h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:8px;}
+.coming-soon p{font-size:0.85rem;line-height:1.6;}
+
+#success-overlay{display:none;position:fixed;inset:0;background:rgba(10,10,15,0.96);z-index:300;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+.success-btn{padding:14px 36px;background:var(--accent);border:none;border-radius:14px;color:white;font-size:1rem;font-family:inherit;cursor:pointer;font-weight:500;}
+@keyframes bounce{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+</style>
+<script src="common_core.js"></script>
+</head>
+<body>
+
+<!-- ══════════ HEADER ══════════ -->
+<header class="lab-header">
+  
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button onclick="labRefresh()" aria-label="새로고침" title="최신 데이터 불러오기" style="background:none;border:none;color:var(--text2);width:38px;height:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex-shrink:0;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+    <a class="home-link" href="somi_ssam_student.html">← 학생 홈</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    
+    <div class="lab-brand">
+      <div class="brand-title">리듬</div>
+      <div class="brand-sub">RHYTHM · SOMI_SSAM</div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════ 패턴 선택 ══════════ -->
+<div class="pattern-select" id="pattern-select">
+  <div class="select-head-row" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+    <div style="flex:1;min-width:0;">
+      <div class="select-title">리듬 연습</div>
+      <div class="select-desc">리듬 감각과 박자 훈련</div>
+    </div>
+    <div id="rest-dday-header" class="rest-dday-header" style="display:none;"></div>
+  </div>
+  <div class="pattern-cards" id="pattern-cards"></div>
+</div>
+
+<!-- ══════════ 연습 화면 ══════════ -->
+<div id="practice-screen">
+  <div class="prac-header">
+    <button class="refresh-btn" onclick="labRefresh()" aria-label="새로고침" title="최신 데이터 불러오기"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+    <button class="back-btn" onclick="closePractice()">← 뒤로</button>
+    <h2 id="prac-title">리듬 연습</h2>
+  </div>
+  <div class="prac-body" id="prac-body"></div>
+</div>
+
+<div id="success-overlay">
+  <div style="font-size:5rem;animation:bounce 0.6s ease;">🎉</div>
+  <div style="font-size:2.2rem;font-weight:700;color:var(--accent3);">성공!</div>
+  <div style="color:var(--text2);font-size:1rem;" id="success-sub"></div>
+  <button class="success-btn" onclick="closeSuccess()">다시 도전하기</button>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   somi_ssam_rhythm_groove.html  v2 (완전 독립 재설계)
+
+   [ 섹션 A ] 리듬 패턴 데이터 (RHYTHM_PATTERNS)
+              ★ 패턴 내용은 추후 작성 — 지금은 빈 배열
+   [ 섹션 B ] 레벨 기본값
+   [ 섹션 C ] 저장/로드 · 잠금 헬퍼
+   [ 섹션 D ] 오디오 엔진
+   [ 섹션 E ] 스케줄러 (scheduler: 'rhythm')
+   [ 섹션 F ] 연습 UI 빌더
+   [ 섹션 G ] 비주얼 업데이트
+   [ 섹션 H ] 종료 · 기록
+   [ 섹션 I ] 카드 렌더 · 진입점
+════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════
+   【 섹션 A 】 리듬 패턴 데이터
+   ──────────────────────────────────────────────
+   ★ 패턴 내용은 추후 전면 작성 예정
+   ★ 새 패턴 추가 방법:
+     1. 아래 RHYTHM_PATTERNS 배열에 객체 추가
+     2. scheduler 값: 'rhythm' (현재 단일 엔진)
+     3. 엔진 코드(섹션 E) 확장 시 scheduler 값 추가
+════════════════════════════════════════════════ */
+const RHYTHM_PATTERNS = [
+  /* 예시 — 실제 패턴 작성 시 이 주석을 지우고 추가
+  {
+    id: 'rhythm_down',
+    name: '정박 연습',
+    desc: '4분음표 4개 · R R R R',
+    level: 'ing', bpm: 60,
+    tags: ['60 BPM', '기본 / 연습'],
+    modeLabels: ['기본', '연습'],
+    scheduler: 'rhythm',
+  },
+  */
+];
+
+/* ════════════════════════════════════════════════
+   【 섹션 B 】 레벨 기본값
+════════════════════════════════════════════════ */
+const DEFAULT_LEVEL_SETTINGS = [
+  { id:'lv1', label:'Lv1' },
+  { id:'lv2', label:'Lv2' },
+  { id:'lv3', label:'Lv3' },
+  { id:'ing', label:'ing' },
+];
+
+/* ════════════════════════════════════════════════
+   【 섹션 C 】 저장/로드 · 잠금 헬퍼
+════════════════════════════════════════════════ */
+/* 저장/불러오기: common_core.js의 공용 window.saveData/window.loadData 사용.
+   (공용이 없을 만일의 경우를 대비한 폴백 — 기존 동작과 동일) */
+if (typeof window.loadData !== 'function') {
+  window.loadData = function(key, def){ try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; } };
+}
+if (typeof window.saveData !== 'function') {
+  window.saveData = function(key, val){ try { const j=JSON.stringify(val); localStorage.setItem(key, j); if(window._fsSet) window._fsSet(key, j); } catch(e) {} };
+}
+
+// ── Firebase 핸들 (첫 동기화 때 보관) ──
+let _fsDb = null, _fsDoc = null, _fsGetDoc = null;
+let _lastSyncTs = 0;       // 마지막으로 반영한 서버 변경 시각
+let _resyncPending = false; // 연습 중 들어온 재동기화 요청 보류 플래그
+if(typeof window._readSyncTs!=='function'){
+window._readSyncTs=function(){
+  try{
+    const m=JSON.parse(localStorage.getItem('somi_sync_meta')||'{}');
+    return Number(m.ts||m.value||0)||0;
+  }catch(e){ return 0; }
+};
+}
+/* STEP I 후속 수정: 함수 선언은 호이스팅으로 window._readSyncTs(common_core 본체)를
+   덮어써 무한재귀를 일으켰다. const 참조로 바꿔 본체를 그대로 가리키게 한다.
+   (common_core 미로드 시를 대비한 폴백 포함 — 기존 동작과 동일) */
+const _readSyncTs = (typeof window._readSyncTs==="function")
+  ? window._readSyncTs
+  : function(){ try{ const m=JSON.parse(localStorage.getItem("somi_sync_meta")||"{}"); return Number(m.ts||m.value||0)||0; }catch(e){ return 0; } };
+
+/* ══════════ 연습기록 병합 (덮어쓰기 방지 — 동기화 전 쌓인 기록 보존) ══════════
+   같은 학생끼리 배열을 합치되 완전중복(date+time+exercise+duration)은 1개만 유지 */
+if(typeof window._mergeLogs!=='function'){
+window._mergeLogs=function(local, remote){
+  local = local || {}; remote = remote || {};
+  const out = {};
+  const ids = new Set([...Object.keys(local), ...Object.keys(remote)]);
+  ids.forEach(id=>{
+    const a = Array.isArray(local[id]) ? local[id] : [];
+    const b = Array.isArray(remote[id]) ? remote[id] : [];
+    const seen = new Set(); const merged = [];
+    [...a, ...b].forEach(rec=>{
+      if(!rec) return;
+      const key = (rec.date||'')+'|'+(rec.time||'')+'|'+(rec.exercise||'')+'|'+(rec.duration||'');
+      if(seen.has(key)) return;
+      seen.add(key); merged.push(rec);
+    });
+    out[id] = merged;
+  });
+  return out;
+};
+}
+// (다리 함수 제거: 같은 이름이라 자기 자신을 무한 호출하던 버그. 호출부는 window._mergeLogs를 직접 사용)
+
+/* ══════════ 접속 기록 + 화면 복귀 시 재동기화 ══════════ */
+async function labRefresh() {
+  somiShowLoading('최신 데이터 불러오는 중...');
+  try {
+    const { initializeApp, getApps } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js");
+    const { getFirestore, doc, getDoc } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js");
+    const FB_CONFIG={apiKey:"AIzaSyCgCdb1pNtcTxEp7APdUW-aeOsJ33v1IhI",authDomain:"somi-ssam.firebaseapp.com",projectId:"somi-ssam",storageBucket:"somi-ssam.firebasestorage.app",messagingSenderId:"841594074779",appId:"1:841594074779:web:c37fd00db5a8883cf0f83e"};
+    const APP_NAME='somi-rhythm-v1';
+    const fbApp=getApps().find(a=>a.name===APP_NAME)||initializeApp(FB_CONFIG,APP_NAME);
+    const fsDb=getFirestore(fbApp);
+    const KEYS=['somi_pattern_locks','somi_pattern_levels','somi_level_settings','somi_class_settings','somi_rest_start_dates','somi_logs'];
+    await Promise.all(KEYS.map(async k=>{
+      const snap=await getDoc(doc(fsDb,'somi_data',k)); if(snap.exists()) localStorage.setItem(k,snap.data().value);
+    }));
+    renderPatternCards();
+  } catch(e) {
+    alert('새로고침 실패: 네트워크를 확인해주세요');
+  }
+  somiHideLoading();
+}
+
+function _recordAccess(){
+  if(!currentProfileId) return;
+  try{
+    const now=new Date();
+    const dateStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    const timeStr=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+    const aLog=JSON.parse(localStorage.getItem('somi_access_log')||'{}');
+    if(!aLog[currentProfileId]) aLog[currentProfileId]=[];
+    const arr=aLog[currentProfileId];
+    const idx=arr.findIndex(r=>r.date===dateStr);
+    if(idx>=0){ arr[idx].time=timeStr; } else { arr.push({date:dateStr,time:timeStr}); }
+    const j=JSON.stringify(aLog);
+    localStorage.setItem('somi_access_log',j);
+    if(window._fsSet) window._fsSet('somi_access_log',j);
+  }catch(e){}
+}
+async function _checkAndResync(){
+  if(!_fsDb||!_fsGetDoc||!_fsDoc) return;
+  try{
+    const snap=await _fsGetDoc(_fsDoc(_fsDb,'somi_data','somi_sync_meta'));
+    if(!snap.exists()) return;
+    localStorage.setItem('somi_sync_meta', snap.data().value);
+    const serverTs=_readSyncTs();
+    if(serverTs<=_lastSyncTs) return; // 변경 없음 → 아무것도 안 함
+    // 변경 있음 → 잠금/레벨/반설정/휴식진입일 받아와 반영
+    const KEYS=['somi_pattern_locks','somi_pattern_levels','somi_level_settings','somi_class_settings','somi_rest_start_dates'];
+    await Promise.all(KEYS.map(async k=>{
+      try{ const s=await _fsGetDoc(_fsDoc(_fsDb,'somi_data',k)); if(s.exists()) localStorage.setItem(k,s.data().value); }catch(e){}
+    }));
+    _lastSyncTs=serverTs;
+    patternLocks          = loadData('somi_pattern_locks', {});
+    patternLevelOverrides = loadData('somi_pattern_levels', {});
+    levelSettings         = loadData('somi_level_settings', null) || DEFAULT_LEVEL_SETTINGS.map(l=>({...l}));
+    renderPatternCards();
+    _maybeShowRestStagePopup();
+  }catch(e){}
+}
+
+let patternLocks         = loadData('somi_pattern_locks', {});
+let patternLevelOverrides= loadData('somi_pattern_levels', {});
+let levelSettings        = loadData('somi_level_settings', null) || DEFAULT_LEVEL_SETTINGS.map(l=>({...l}));
+let practiceLogs         = loadData('somi_logs', {});
+let currentProfileId     = null;
+
+/* ════════════════════════════════════════════════
+   휴식반(숨고르기) 단계 자동 잠금 · 종료반 가림 — 리듬 독립 복제
+   home과 동일 규칙을 이 페이지에 독립적으로 보관
+   ※ 리듬 패턴 미제작 상태이므로 허용목록은 빈 배열 (패턴 생기면 채움)
+════════════════════════════════════════════════ */
+const _REST_RHYTHM_ALLOWED = {
+  month1:    [],
+  month2to3: [],
+  month4plus: [],
+};
+function _getProfileClass(){
+  if(!currentProfileId) return null;
+  try{
+    const cs=loadData('somi_class_settings',{});
+    return (cs[currentProfileId]||{}).voClass||null;
+  }catch(e){ return null; }
+}
+function _getRestStartDate(){
+  if(!currentProfileId) return null;
+  try{
+    const r=loadData('somi_rest_start_dates',{});
+    return r[currentProfileId]||null;
+  }catch(e){ return null; }
+}
+function _getRestStage(startDateStr){
+  if(!startDateStr) return 'month1';
+  const start=new Date(startDateStr+'T00:00:00'); const now=new Date();
+  let months=(now.getFullYear()-start.getFullYear())*12+(now.getMonth()-start.getMonth());
+  if(now.getDate()<start.getDate()) months--;
+  if(months<1) return 'month1';
+  if(months<3) return 'month2to3';
+  return 'month4plus';
+}
+function _getRestDays(startDateStr){
+  if(!startDateStr) return 0;
+  const start=new Date(startDateStr+'T00:00:00'); const now=new Date();
+  return Math.floor((now-start)/86400000)+1;
+}
+function _isRestClass(){ return _getProfileClass()==='숨고르기'; }
+function _isEndedClass(){ return _getProfileClass()==='종료반'; }
+
+function isLocked(patternId) {
+  if(!currentProfileId) return false;
+  const pl=patternLocks[currentProfileId];
+  // 원래(선생님 설정) 열림 여부
+  const baseOpen = pl ? (pl[patternId]===true) : true; // 잠금데이터 없는 구버전 = 열림
+
+  // 종료반: 전부 잠금
+  if(_isEndedClass()) return true;
+
+  // 휴식반: "원래 열림 ∩ 단계 허용" 교집합 — 절대 늘지 않고 줄기만 함
+  if(_isRestClass()){
+    const stage=_getRestStage(_getRestStartDate());
+    const allowed=_REST_RHYTHM_ALLOWED[stage]||[];
+    return !(baseOpen && allowed.includes(patternId));
+  }
+
+  if(!pl) return true; // 잠금 데이터 없으면 기본 잠금 (가입직후/유실 = 잠김)
+  return pl[patternId]!==true; // 명시적 열림(true)이 아니면 잠김 (신규/미지정 = 잠김)
+}
+
+// 휴식 단계 안내 팝업 (앱 전체에서 경계당 1회) — 대기업 안내톤
+function _maybeShowRestStagePopup(){
+  if(!_isRestClass()) return;
+  const startDate=_getRestStartDate();
+  const stage=_getRestStage(startDate);
+  if(stage==='month1') return; // 1개월차는 진입 안내 없음(변화 시점만 안내)
+  const seenKey='somi_rest_stage_seen_'+currentProfileId;
+  let seen=null;
+  try{ seen=localStorage.getItem(seenKey); }catch(e){}
+  if(seen===stage) return; // 이미 이 단계 안내를 봄 → 다시 안 띄움
+
+  const msg = stage==='month2to3'
+    ? '휴식 기간이 1개월을 넘어, 연습 패턴 범위가 자동으로 조정되었습니다.\n\n쉬어가는 동안 핵심 패턴 위주로 가볍게 유지하실 수 있도록 구성되었습니다. 수업을 재개하시면 이전 범위로 복원됩니다.'
+    : '휴식 기간이 3개월을 넘어, 연습 패턴이 모두 잠금 상태로 전환되었습니다.\n\n다시 함께하고 싶으실 때 언제든 선생님께 말씀해 주세요. 반갑게 다시 열어드리겠습니다.';
+  _showRestModal(stage==='month2to3'?'연습 범위가 조정되었어요':'연습이 잠시 멈춰졌어요', msg);
+  try{ localStorage.setItem(seenKey, stage); }catch(e){}
+}
+function _showRestModal(title, body){
+  let m=document.getElementById('rest-stage-modal');
+  if(!m){
+    m=document.createElement('div'); m.id='rest-stage-modal';
+    m.style.cssText='position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;padding:24px;';
+    m.innerHTML='<div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);"></div>'
+      +'<div style="position:relative;max-width:380px;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px 24px;box-shadow:0 20px 60px rgba(0,0,0,0.35);">'
+      +'<div id="rsm-title" style="font-size:1.02rem;font-weight:800;margin-bottom:12px;color:var(--text);"></div>'
+      +'<div id="rsm-body" style="font-size:0.86rem;line-height:1.7;color:var(--text2);white-space:pre-line;"></div>'
+      +'<button id="rsm-ok" style="margin-top:22px;width:100%;padding:12px;border-radius:11px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:0.9rem;font-weight:700;cursor:pointer;">확인</button>'
+      +'</div>';
+    document.body.appendChild(m);
+    m.querySelector('#rsm-ok').onclick=()=>{ m.style.display='none'; };
+  }
+  m.querySelector('#rsm-title').textContent=title;
+  m.querySelector('#rsm-body').textContent=body;
+  m.style.display='flex';
+}
+// 헤더 제목 우측에 휴식 디데이 표시/갱신
+function _renderRestDday(){
+  const el=document.getElementById('rest-dday-header'); if(!el) return;
+  if(!_isRestClass()){ el.style.display='none'; el.innerHTML=''; return; }
+  const days=_getRestDays(_getRestStartDate());
+  if(days<=0){ el.style.display='none'; return; }
+  el.innerHTML='<span class="dot"></span> 숨 고르기 · '+days+'일째';
+  el.style.display='flex';
+}
+// 종료반 안개: container를 래퍼로 감싸고, 화면 일부만 노출 + 바닥에서 완전히 가림
+function _applyEndedFog(container){
+  if(!container || !container.parentNode) return;
+  if(container.closest('.ended-fog-wrap')) return; // 이미 감쌈
+  const wrap=document.createElement('div');
+  wrap.className='ended-fog-wrap';
+  container.parentNode.insertBefore(wrap, container);
+  wrap.appendChild(container);
+  const veil=document.createElement('div'); veil.className='ended-fog-veil'; wrap.appendChild(veil);
+  const dots=document.createElement('div'); dots.className='ended-fog-dots'; dots.textContent='···'; wrap.appendChild(dots);
+  document.body.style.overflow='hidden';
+  document.documentElement.style.overflow='hidden';
+}
+function _clearEndedFog(){
+  document.body.style.overflow='';
+  document.documentElement.style.overflow='';
+  const wrap=document.querySelector('.ended-fog-wrap');
+  if(wrap){
+    const cards=wrap.querySelector('#pattern-cards');
+    if(cards) wrap.parentNode.insertBefore(cards, wrap);
+    wrap.remove();
+  }
+  document.querySelectorAll('.ended-fog-veil,.ended-fog-dots').forEach(el=>el.remove());
+}
+function getPatternLevel(patternId) {
+  return patternLevelOverrides[patternId]||(RHYTHM_PATTERNS.find(p=>p.id===patternId)||{}).level;
+}
+
+let currentTheme = loadData('somi_theme', 'dark');
+function applyTheme() { document.body.classList.toggle('theme-ivory', currentTheme==='ivory'); }
+
+/* ════════════════════════════════════════════════
+   【 섹션 D 】 오디오 엔진
+════════════════════════════════════════════════ */
+let audioCtx=null, masterGain=null, metronomeGain=null, userGain=null;
+let metronomeVol=1.0, userVol=1.0;
+
+// ── iPad Safari 오디오 언락 v4 (rhythm): 세션 활성화 + SR기억 + 정찰병 자동 교체 ──
+// WebKit 버그: 컨텍스트 샘플레이트와 하드웨어 출력이 불일치하면 state와 무관하게 클럭(currentTime)이 0에 동결됨
+const _SILENT_WAV='data:audio/wav;base64,UklGRoQJAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YWAJAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA=';
+let _silentEl=null,_clockWatchdog=null,_ctxRebuilds=0,_needGestureRebuild=false,_awaitClock=false;
+let _probes=[]; // 샘플레이트 정찰병 컨텍스트 [{ctx,sr}]
+const _SR_KEY='somi_audio_sr'; // 이 기기에서 클럭이 도는 것으로 확인된 샘플레이트 (모듈 공유)
+function _storedSR(){try{const v=parseInt(localStorage.getItem(_SR_KEY)||'0',10);return(v===44100||v===48000)?v:0;}catch(e){return 0;}}
+function _rememberSR(sr){try{localStorage.setItem(_SR_KEY,String(sr));}catch(e){}}
+function _srForAttempt(n){
+  const st=_storedSR();const seq=[st||0,44100,48000].filter((v,i,a)=>a.indexOf(v)===i);
+  return seq[n%seq.length];
+}
+function _setIOSSession(){
+  try{if(navigator.audioSession&&navigator.audioSession.type!=='playback')navigator.audioSession.type='playback';}catch(e){}
+}
+function _playSilentElement(){
+  try{
+    if(!_silentEl){_silentEl=document.createElement('audio');_silentEl.setAttribute('playsinline','');_silentEl.loop=true;_silentEl.src=_SILENT_WAV;}
+    const p=_silentEl.play();if(p&&p.catch)p.catch(()=>{});
+  }catch(e){}
+}
+function _stopSilentElement(){try{if(_silentEl){_silentEl.pause();_silentEl.currentTime=0;}}catch(e){}}
+function _audioDiag(tag){
+  try{
+    const sess=(navigator.audioSession&&navigator.audioSession.state)||'API없음';
+    console.log('[AUDIO-진단 '+tag+'] state='+(audioCtx?audioCtx.state:'없음')
+      +' sr='+(audioCtx?audioCtx.sampleRate:'-')
+      +' t='+(audioCtx?audioCtx.currentTime.toFixed(4):'-')
+      +' session='+sess+' rebuilds='+_ctxRebuilds);
+  }catch(e){}
+}
+function _wireGains(){
+  masterGain=audioCtx.createGain();masterGain.gain.value=1.95;
+  userGain=audioCtx.createGain();userGain.gain.value=userVol;
+  masterGain.connect(userGain);userGain.connect(audioCtx.destination);
+  metronomeGain=audioCtx.createGain();metronomeGain.gain.value=metronomeVol;metronomeGain.connect(masterGain);
+}
+function _buildCtx(){
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;
+  _setIOSSession();
+  const sr=_srForAttempt(_ctxRebuilds);
+  try{audioCtx=sr?new AC({sampleRate:sr}):new AC();}
+  catch(e){audioCtx=new AC();}
+  _wireGains();
+  _audioDiag('생성');
+  return true;
+}
+function _unlockAudio(){
+  if(!audioCtx)return;
+  try{
+    if(audioCtx.state!=='running')audioCtx.resume().catch(()=>{});
+    const buf=audioCtx.createBuffer(1,1,22050),src=audioCtx.createBufferSource();
+    src.buffer=buf;src.connect(audioCtx.destination);src.start(0);
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    g.gain.value=0.0001;o.connect(g);g.connect(audioCtx.destination);
+    o.start(0);o.stop(audioCtx.currentTime+0.05);
+  }catch(e){}
+  _playSilentElement();
+}
+function _makeProbes(){
+  if(_probes.length||!audioCtx)return;
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  [44100,48000].forEach(sr=>{
+    if(audioCtx&&audioCtx.sampleRate===sr)return;
+    try{
+      const c=new AC({sampleRate:sr});
+      if(c.state!=='running')c.resume().catch(()=>{});
+      const b=c.createBuffer(1,1,22050),bs=c.createBufferSource();
+      bs.buffer=b;bs.connect(c.destination);bs.start(0);
+      _probes.push({ctx:c,sr:sr});
+    }catch(e){}
+  });
+  if(_probes.length)console.log('[AUDIO] 정찰병 컨텍스트 생성: '+_probes.map(p=>p.sr).join(', '));
+}
+function _closeProbes(){
+  _probes.forEach(p=>{try{p.ctx.close().catch(()=>{});}catch(e){}});
+  _probes=[];
+}
+function _adoptProbe(p){
+  
+  try{if(audioCtx)audioCtx.close().catch(()=>{});}catch(e){}
+  audioCtx=p.ctx;
+  _wireGains();
+  _probes=_probes.filter(x=>x!==p);
+  _closeProbes();
+  _rememberSR(p.sr);
+  _awaitClock=true; // 스케줄러가 새 클럭에 자동 재앵커
+}
+function _teardownCtx(){
+  try{if(audioCtx)audioCtx.close().catch(()=>{});}catch(e){}
+  audioCtx=null;masterGain=null;metronomeGain=null;userGain=null;
+}
+function _gestureRebuild(){
+  // ★ 반드시 유저 제스처 콜스택 안에서만 호출
+  _needGestureRebuild=false;
+  _ctxRebuilds++;
+  _teardownCtx();
+  if(_buildCtx()){_unlockAudio();_awaitClock=true;console.log('[AUDIO] 제스처 내 컨텍스트 재생성 #'+_ctxRebuilds+' (sr시도='+(_srForAttempt(_ctxRebuilds)||'기본')+')');}
+}
+function _startClockWatchdog(){
+  if(_clockWatchdog)clearInterval(_clockWatchdog);
+  let tries=0;
+  _clockWatchdog=setInterval(()=>{
+    if(!audioCtx){clearInterval(_clockWatchdog);_clockWatchdog=null;return;}
+    if(audioCtx.currentTime>0){
+      clearInterval(_clockWatchdog);_clockWatchdog=null;_needGestureRebuild=false;_ctxRebuilds=0;
+      _stopSilentElement();_rememberSR(audioCtx.sampleRate);_closeProbes();
+      
+      return;}
+    tries++;
+    if(tries>=2&&_probes.length){
+      const live=_probes.find(p=>{try{return p.ctx.currentTime>0;}catch(e){return false;}});
+      if(live){_adoptProbe(live);return;}
+    }
+    if(tries===3){try{audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{});}catch(e){}_audioDiag('정지·소생시도');}
+    else if(tries>=10){
+      clearInterval(_clockWatchdog);_clockWatchdog=null;_needGestureRebuild=true;
+      _audioDiag('기동실패');
+      console.warn('[AUDIO] 클럭 기동 실패 — 다음 터치에서 샘플레이트 바꿔 재생성');
+    }
+  },100);
+}
+function initAudio(){
+  if(!audioCtx){if(!_buildCtx())return;}
+  _unlockAudio();
+}
+function ensureAudio(){
+  if(_needGestureRebuild){_gestureRebuild();}
+  else if(!audioCtx)initAudio();
+  else _unlockAudio();
+  if(audioCtx&&audioCtx.currentTime<=0){_makeProbes();_startClockWatchdog();}
+}
+// ★ touchstart는 iOS 오디오 언락 제스처 불인정 — 컨텍스트 '생성' 금지, 기존 ctx 언락만
+document.addEventListener('touchstart',()=>{if(audioCtx)_unlockAudio();},{passive:true,capture:true});
+document.addEventListener('touchend',ensureAudio,{passive:true,capture:true});
+document.addEventListener('click',ensureAudio,{passive:true});
+
+function playClick(type, time) {
+  if(!audioCtx) return;
+  try {
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.connect(g); g.connect(metronomeGain);
+    const f=type==='accent'?1200:type==='soft'?600:900;
+    const v=type==='accent'?0.4:type==='soft'?0.18:0.28;
+    o.frequency.value=f; o.type='sine';
+    g.gain.setValueAtTime(v,time); g.gain.exponentialRampToValueAtTime(0.001,time+0.1);
+    o.start(time); o.stop(time+0.1);
+  } catch(e) {}
+}
+
+/* ════════════════════════════════════════════════
+   【 섹션 E 】 스케줄러
+   ──────────────────────────────────────────────
+   ★ scheduler: 'rhythm' — 기본 4박 루프
+   ★ 패턴 작성 시 buildMainBeat() 확장
+════════════════════════════════════════════════ */
+let EX='', TMODE='basic', SUB='4';
+let seqPhase='counting', seqStep=0, loopCount=0;
+let isPlaying=false, isPaused=false;
+let mainStartWallTime=0, elapsedSeconds=0, pausedElapsed=0;
+let nextBeatTime=0, beatInterval=1;
+let schedulerTimer=null, timerRafId=null;
+let beatQueue=[];
+let stopScheduled=false, stopSuccess=false, stopAudioTime=0;
+
+// 재생영역 컨트롤 아이콘 (이모지 폴백 방지 — SVG 고정). 되돌리기=헤더 새로고침과 동일 아이콘.
+const SVG_RESET = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>';
+const SVG_PLAY  = '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5z"/></svg>';
+const SVG_STOP  = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2.5"/></svg>';
+const SVG_PAUSE = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>';
+function setPlayIcon(playing){ const pb=document.getElementById('play-btn'); if(pb) pb.innerHTML = playing ? SVG_PAUSE : SVG_PLAY; }
+
+function currentPat() { return RHYTHM_PATTERNS.find(p=>p.id===EX); }
+
+function startEngine() {
+  // ═══ iPad Safari: 제스처 콜스택 안에서 동기식으로 생성+언락+정찰병까지 일사천리 ═══
+  if(_needGestureRebuild) _gestureRebuild();
+  if(!audioCtx) initAudio(); if(!audioCtx) return;
+  _unlockAudio();
+  if(audioCtx.currentTime<=0){ _makeProbes(); _awaitClock=true; _startClockWatchdog(); }
+  const pat=currentPat(); if(!pat) return;
+  beatInterval=60/pat.bpm;
+
+  if(isPaused) {
+    const resumeAt=audioCtx.currentTime+0.05;
+    mainStartWallTime=Date.now()-pausedElapsed*1000+(resumeAt-audioCtx.currentTime)*1000;
+    nextBeatTime=resumeAt; isPaused=false;
+  } else {
+    window.__SOMI_LOGGED_THIS_RUN=false; // 새 재생 시작 — 중복방지 플래그 초기화(공통)
+    seqPhase='counting'; seqStep=0; loopCount=0;
+    nextBeatTime=audioCtx.currentTime+0.05; mainStartWallTime=0;
+  }
+
+  isPlaying=true;
+  setPlayIcon(true);
+  schedulerTimer=setInterval(schedulerTick,25);
+  timerRafId=requestAnimationFrame(timerFrame);
+}
+
+function schedulerTick() {
+  if(!audioCtx) return;
+  const now=audioCtx.currentTime;
+  // Safari 안전장치: 클럭이 0이면 대기, 움직이기 시작한 순간 재앵커
+  if(_awaitClock){ if(now<=0) return; nextBeatTime=now+0.05; _awaitClock=false; }
+  while(nextBeatTime<now+0.15) { scheduleOneBeat(nextBeatTime); nextBeatTime+=beatInterval; }
+}
+
+function scheduleOneBeat(time) {
+  let clickType='normal', vis=null;
+  if(seqPhase==='counting') {
+    const idx=seqStep; clickType=idx===0?'accent':'normal'; vis={phase:'counting',idx};
+    seqStep++;
+    if(seqStep>=4) {
+      if(stopScheduled){ playClick(clickType,time); beatQueue.push({time,vis}); return; }
+      seqPhase='main'; seqStep=0;
+      if(mainStartWallTime===0) mainStartWallTime=Date.now()+(time+beatInterval-audioCtx.currentTime)*1000;
+      loopCount++;
+    }
+  } else {
+    const r=buildMainBeat(time); clickType=r.clickType; vis=r.vis;
+  }
+  playClick(clickType,time); beatQueue.push({time,vis});
+}
+
+/* ── 리듬 메인 비트 빌더 ── */
+function buildMainBeat(time) {
+  // ★ 패턴 작성 시 여기에 scheduler별 분기 추가
+  // 현재: 기본 4박 루프
+  const idx=seqStep%4;
+  if(idx===0) loopCount++;
+  const clickType=idx===0?'accent':'normal';
+  const vis={phase:'pattern', idx, loop:loopCount};
+  seqStep++;
+  if(seqStep>=4) {
+    seqStep=0;
+    if(TMODE==='basic'&&loopCount>=8) scheduleStop(time+beatInterval);
+  }
+  return{clickType,vis};
+}
+
+function scheduleStop(audioTime, success=false) {
+  stopScheduled=true; stopSuccess=success; stopAudioTime=audioTime;
+}
+
+function timerFrame() {
+  const now=audioCtx?audioCtx.currentTime:0;
+  while(beatQueue.length&&beatQueue[0].time<=now+0.02) { applyVisual(beatQueue.shift().vis); }
+  if(stopScheduled&&audioCtx&&audioCtx.currentTime>=stopAudioTime-0.05) {
+    stopScheduled=false;
+    logPractice(); // 자동완료 시 항상 로그 저장
+    stopEngine();
+    // elapsedSeconds는 안 건드림 — 자동완료 후 화면에 마지막 연습시간 남김(발성·호흡과 동일). 중복방지는 공통 __SOMI_LOGGED_THIS_RUN.
+    // isPaused/pausedElapsed는 리듬 stopEngine이 정리 안 하므로 여기서 초기화(재생 상태용, 화면 무관).
+    isPaused=false; pausedElapsed=0;
+    if(stopSuccess) showSuccess('목표 달성! 🎉');
+    else showSuccess('기본 모드 완료!');
+    return;
+  }
+  if(isPlaying&&mainStartWallTime>0) {
+    elapsedSeconds=(Date.now()-mainStartWallTime)/1000;
+    const tm=document.getElementById('timer-main');
+    if(tm) {
+      const s=Math.max(0,Math.floor(elapsedSeconds));
+      const cs=Math.floor((elapsedSeconds-Math.floor(elapsedSeconds))*100);
+      tm.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')+'.'+String(cs).padStart(2,'0');
+      tm.className='timer-main running';
+    }
+  }
+  timerRafId=requestAnimationFrame(timerFrame);
+}
+
+/* ════════════════════════════════════════════════
+   【 섹션 F 】 연습 UI 빌더
+════════════════════════════════════════════════ */
+function startExercise(id) {
+  if(isLocked(id)) return;
+  // 스크롤 위치 저장 (뒤로 갔을 때 복원용)
+  sessionStorage.setItem('somi_rhythm_scroll', String(window.scrollY));
+  initAudio(); EX=id; TMODE='basic';
+  const pat=currentPat(); if(!pat) return;
+  document.getElementById('prac-title').textContent=pat.name;
+  buildPracticeUI();
+  document.getElementById('pattern-select').style.display='none';
+  document.getElementById('practice-screen').style.display='flex';
+  somiScrollTop();  // 연습화면 진입 시 맨 위로
+}
+
+function closePractice() {
+  stopExercise();
+  document.getElementById('practice-screen').style.display='none';
+  document.getElementById('pattern-select').style.display='block';
+  renderPatternCards();
+  _maybeShowRestStagePopup();
+  // 뒤로가기 시 스크롤 위치 복원
+  const savedY=sessionStorage.getItem('somi_rhythm_scroll');
+  if(savedY)requestAnimationFrame(()=>window.scrollTo(0,parseInt(savedY)||0));
+}
+
+function buildPracticeUI() {
+  const body=document.getElementById('prac-body'); body.innerHTML='';
+  const pat=currentPat(); if(!pat) return;
+
+  // 모드 탭
+  if(pat.modeLabels) {
+    const mt=document.createElement('div'); mt.className='mode-tabs';
+    pat.modeLabels.forEach(label=>{
+      const val=label==='기본'?'basic':'free';
+      const b=document.createElement('button'); b.className='m-tab'+(TMODE===val?' active':'');
+      b.textContent=label;
+      b.onclick=()=>{ TMODE=val; mt.querySelectorAll('.m-tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); hardReset(); };
+      mt.appendChild(b);
+    });
+    body.appendChild(mt);
+  }
+
+  // 박자 행
+  const br=document.createElement('div'); br.className='beat-row'; br.id='beat-row';
+  for(let i=0;i<4;i++){
+    const s=document.createElement('span'); s.className='beat-num'; s.id='bn-'+i; s.textContent=i+1; br.appendChild(s);
+  }
+  body.appendChild(br);
+
+  // 인포박스
+  const ib=document.createElement('div'); ib.className='info-box';
+  const ia=document.createElement('div'); ia.className='info-action'; ia.id='info-action'; ia.textContent='시작 버튼을 눌러주세요';
+  ib.appendChild(ia); body.appendChild(ib);
+
+  // 타이머
+  const tw=document.createElement('div'); tw.style.cssText='text-align:center;';
+  const tm=document.createElement('div'); tm.className='timer-main'; tm.id='timer-main'; tm.textContent='00:00.00';
+  const lcc=document.createElement('div'); lcc.className='loop-counter'; lcc.id='loop-counter'; lcc.textContent='0/∞';
+  tw.appendChild(tm); tw.appendChild(lcc); body.appendChild(tw);
+
+  // 컨트롤
+  const ctrl=document.createElement('div'); ctrl.className='controls';
+  ctrl.innerHTML=`<button class="ctrl-btn reset" onclick="hardReset()" aria-label="다시">${SVG_RESET}</button><button class="ctrl-btn play" id="play-btn" onclick="togglePlay()" aria-label="재생">${SVG_PLAY}</button><button class="ctrl-btn stop" onclick="stopExercise()" aria-label="정지">${SVG_STOP}</button>`;
+  body.appendChild(ctrl);
+
+  // 볼륨
+  const vw=document.createElement('div'); vw.className='vol-wrap';
+  const vr=document.createElement('div'); vr.className='vol-row'; vr.innerHTML='<span>메트로놈</span>';
+  const sl=document.createElement('input'); sl.type='range'; sl.min='0'; sl.max='100'; sl.value=String(Math.round(metronomeVol*100));
+  sl.oninput=()=>{ metronomeVol=parseInt(sl.value)/100; if(metronomeGain) metronomeGain.gain.value=metronomeVol; };
+  vr.appendChild(sl); vw.appendChild(vr);
+  const ugR=document.createElement('div'); ugR.className='vol-row'; ugR.innerHTML='<span>마스터</span>';
+  const ugS=document.createElement('input'); ugS.type='range'; ugS.min='0'; ugS.max='200'; ugS.value=String(Math.round(userVol*100)); ugS.style.cssText='flex:1;accent-color:var(--accent3);cursor:pointer;';
+  ugS.oninput=()=>{ userVol=parseInt(ugS.value)/100; if(userGain) userGain.gain.value=userVol; };
+  ugR.appendChild(ugS); vw.appendChild(ugR); body.appendChild(vw);
+}
+
+function hardReset() { stopEngine(); elapsedSeconds=0; isPaused=false; pausedElapsed=0; buildPracticeUI(); }
+function togglePlay() { if(isPlaying) pauseEngine(); else startEngine(); }
+
+/* ════════════════════════════════════════════════
+   【 섹션 G 】 비주얼 업데이트
+════════════════════════════════════════════════ */
+function applyVisual(vis) {
+  if(!vis) return;
+  if(vis.phase==='counting') {
+    for(let i=0;i<4;i++){
+      const el=document.getElementById('bn-'+i); if(!el) continue;
+      el.className='beat-num'+(i===vis.idx?' active-counting':'');
+    }
+    setInfoBox('카운팅');
+    return;
+  }
+  if(vis.phase==='pattern') {
+    for(let i=0;i<4;i++){
+      const el=document.getElementById('bn-'+i); if(!el) continue;
+      el.className='beat-num'+(i===vis.idx?' active-pattern':'');
+    }
+    const loopMax=TMODE==='basic'?'8':'∞';
+    const lcc=document.getElementById('loop-counter'); if(lcc) lcc.textContent=(vis.loop||0)+'/'+loopMax;
+    setInfoBox('리듬');
+  }
+}
+
+function setInfoBox(a) {
+  const ae=document.getElementById('info-action'); if(ae) ae.textContent=a;
+}
+
+/* ════════════════════════════════════════════════
+   【 섹션 H 】 종료 · 기록
+════════════════════════════════════════════════ */
+function pauseEngine() {
+  isPlaying=false;
+  clearInterval(schedulerTimer); schedulerTimer=null;
+  cancelAnimationFrame(timerRafId); timerRafId=null;
+  setPlayIcon(false);
+  const tm=document.getElementById('timer-main'); if(tm) tm.className='timer-main';
+  isPaused=true; pausedElapsed=elapsedSeconds;
+}
+function stopEngine() {
+  pauseEngine();
+  beatQueue=[]; stopScheduled=false;
+  seqPhase='counting'; seqStep=0; loopCount=0; mainStartWallTime=0;
+}
+function stopExercise() {
+  if(isPlaying||elapsedSeconds>2) logPractice();
+  stopEngine(); elapsedSeconds=0; isPaused=false; pausedElapsed=0;
+  document.querySelectorAll('.beat-num').forEach(b=>b.className='beat-num');
+  const tm=document.getElementById('timer-main'); if(tm){tm.textContent='00:00.00';tm.className='timer-main';}
+  setInfoBox('시작 버튼을 눌러주세요');
+  if(_resyncPending){ _resyncPending=false; _checkAndResync(); }
+}
+function logPractice() {
+  if(!currentProfileId||elapsedSeconds<2) return;
+  const pat=currentPat(); if(!pat) return;
+  // ── 음식: 리듬 고유의 exercise 이름(패턴명 그대로) ──
+  // ── 그릇: 중복방지·재병합·저장·전송은 공통 _appendPracticeLog 1벌이 담당 ──
+  if(typeof window._appendPracticeLog==='function') window._appendPracticeLog(currentProfileId, 'rhythm', pat.name, elapsedSeconds);
+}
+function showSuccess(msg){ document.getElementById('success-sub').textContent=msg; document.getElementById('success-overlay').style.display='flex'; }
+function closeSuccess(){ document.getElementById('success-overlay').style.display='none'; hardReset(); }
+
+/* ════════════════════════════════════════════════
+   【 섹션 I 】 카드 렌더 · 진입점
+════════════════════════════════════════════════ */
+function renderPatternCards() {
+  const container=document.getElementById('pattern-cards'); container.innerHTML='';
+  // 이전 렌더의 안개 래퍼/점 정리 (중복 방지)
+  _clearEndedFog();
+  // 휴식 디데이 배지
+  _renderRestDday();
+
+  if(!RHYTHM_PATTERNS.length) {
+    container.innerHTML='<div class="coming-soon"><div class="icon">🥁</div><h3>패턴 준비 중</h3><p>리듬 패턴이 곧 추가될 예정이에요</p></div>';
+    return;
+  }
+
+  const ended=_isEndedClass();
+  RHYTHM_PATTERNS.forEach(pat=>{
+    const locked=isLocked(pat.id);
+    const lvId=getPatternLevel(pat.id);
+    const lv=levelSettings.find(l=>l.id===lvId);
+    const card=document.createElement('div'); card.className='pattern-card'+(locked?' locked':'');
+    card.innerHTML=`<h3>${pat.name}</h3><p>${pat.desc||''}</p>`
+      +`<div class="pattern-meta">${lv?`<span class="lv-badge">${lv.label}</span>`:''}`
+      +`${(pat.tags||[]).map(t=>`<span class="meta-tag">${t}</span>`).join('')}`
+      +`${pat.modeLabels?`<span class="meta-tag">${pat.modeLabels.join(' · ')}</span>`:''}</div>`
+      +(locked?'<div class="lock-overlay">🔒</div>':'');
+    if(!locked) card.onclick=()=>startExercise(pat.id);
+    container.appendChild(card);
+  });
+
+  // 종료반: 카드목록을 래퍼로 감싸 화면 일부만 노출 + 안개 + 스크롤 차단
+  if(ended) _applyEndedFog(container);
+
+  // 패턴 목록 localStorage 저장 → home.html이 읽어서 관리
+  try {
+    const list=RHYTHM_PATTERNS.map(p=>({
+      id:p.id, name:p.name, desc:p.desc||'', chapter:'rhythm',
+      bpm:p.bpm||60, level:p.level, modeLabels:p.modeLabels||['기본'], tags:p.tags||[],
+    }));
+    localStorage.setItem('somi_rhythm_patterns', JSON.stringify(list));
+  } catch(e) {}
+}
+
+/* ── 초기화 ── */
+document.addEventListener('DOMContentLoaded', function() {
+  applyTheme();
+  currentProfileId=localStorage.getItem('somi_current_profile_id')||null;
+  patternLocks=loadData('somi_pattern_locks',{});
+  patternLevelOverrides=loadData('somi_pattern_levels',{});
+  levelSettings=loadData('somi_level_settings',null)||DEFAULT_LEVEL_SETTINGS.map(l=>({...l}));
+  renderPatternCards();
+  _maybeShowRestStagePopup();
+  // 빈 패턴 배열이어도 localStorage 저장 (home.html이 챕터 인식하도록)
+  if(!RHYTHM_PATTERNS.length) {
+    try{ localStorage.setItem('somi_rhythm_patterns', JSON.stringify([])); }catch(e){}
+  }
+
+  // ── 로딩화면 표시 → 동기화 끝까지 완료 후 해제 ──
+  // 연습기록(somi_logs)을 받기 전에 학생이 연습을 끝내면 기록이 덮여 유실되므로
+  // 동기화가 끝날 때까지 화면을 막고, 실패 시 자동 재시도한다. (25초 후 비상구 버튼)
+  somiShowLoading('데이터 불러오는 중...');
+  let _offlineForced=false, _syncDone=false;
+  window.somiHideLoading = (function(orig){
+    return function(){ _offlineForced=true; orig(); _afterSync(true); };
+  })(window.somiHideLoading);
+
+  function _afterSync(offline){
+    if(_syncDone) return; _syncDone=true;
+    patternLocks          = loadData('somi_pattern_locks', {});
+    patternLevelOverrides = loadData('somi_pattern_levels', {});
+    levelSettings         = loadData('somi_level_settings', null) || DEFAULT_LEVEL_SETTINGS.map(l=>({...l}));
+    // 연습기록은 덮어쓰지 않고 이미 메모리에 쌓인 것과 병합
+    let remote={}; try{ remote=JSON.parse(localStorage.getItem('somi_logs')||'{}'); }catch(e){}
+    practiceLogs = window._mergeLogs(practiceLogs, remote);
+    _lastSyncTs = _readSyncTs();
+    renderPatternCards();
+    _maybeShowRestStagePopup();
+    _recordAccess();
+    if(!offline) somiHideLoading();
+  }
+
+  (async ()=>{
+    let fsDb=null, doc=null, getDoc=null, setDoc=null;
+    // 1단계: Firebase 모듈 로드 + 초기화 (성공할 때까지 재시도)
+    window.somiSetLoadText && window.somiSetLoadText('서버에 연결하는 중...');
+    while(!_offlineForced && !fsDb){
+      try{
+        const appMod = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js");
+        const fsMod  = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js");
+        const { initializeApp, getApps } = appMod;
+        ({ doc, getDoc, setDoc } = fsMod);
+        const FB_CONFIG={apiKey:"AIzaSyCgCdb1pNtcTxEp7APdUW-aeOsJ33v1IhI",authDomain:"somi-ssam.firebaseapp.com",projectId:"somi-ssam",storageBucket:"somi-ssam.firebasestorage.app",messagingSenderId:"841594074779",appId:"1:841594074779:web:c37fd00db5a8883cf0f83e"};
+        const APP_NAME='somi-rhythm-v1';
+        const fbApp=getApps().find(a=>a.name===APP_NAME)||initializeApp(FB_CONFIG,APP_NAME);
+        fsDb=fsMod.getFirestore(fbApp);
+      }catch(e){
+        console.warn('rhythm Firebase 초기화 재시도:', e.message);
+        await new Promise(r=>setTimeout(r,1500));
+      }
+    }
+    if(_offlineForced) return;
+    _fsDb=fsDb; _fsDoc=doc; _fsGetDoc=getDoc;
+    window._somiServerRead = async (key)=>{ try{ const s=await getDoc(doc(fsDb,'somi_data',key)); return s.exists()?s.data().value:null; }catch(e){ return null; } };
+    window._fsSet=async(k,j)=>{ try{ await setDoc(doc(fsDb,'somi_data',k),{value:j}); }catch(e){} };
+
+    // 2단계: 잠금+레벨+연습기록 동기화 (모든 키 성공할 때까지 재시도)
+    window.somiSetLoadText && window.somiSetLoadText('기록 불러오는 중...');
+    const KEYS=['somi_logs','somi_pattern_locks','somi_pattern_levels','somi_level_settings','somi_class_settings','somi_rest_start_dates','somi_sync_meta'];
+    let _ok=false;
+    while(!_offlineForced && !_ok){
+      try{
+        await Promise.all(KEYS.map(async k=>{
+          const snap=await getDoc(doc(fsDb,'somi_data',k));
+          if(snap.exists()) localStorage.setItem(k, snap.data().value);
+        }));
+        _ok=true;
+      }catch(e){
+        console.warn('rhythm 동기화 재시도:', e.message);
+        await new Promise(r=>setTimeout(r,1500));
+      }
+    }
+    if(_offlineForced) return;
+    _afterSync(false);
+  })();
+
+  // 페이지 이탈/백그라운드 전환 시 연습 로그 자동 저장 + 복귀 시 재동기화
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='hidden'){
+      if(isPlaying||elapsedSeconds>2) logPractice();
+    } else if(document.visibilityState==='visible'){
+      if(isPlaying){ _resyncPending=true; } else { _checkAndResync(); }
+    }
+  });
+  window.addEventListener('pagehide',()=>{
+    if(isPlaying||elapsedSeconds>2) logPractice();
+  });
+});
+</script>
+</body>
+</html>

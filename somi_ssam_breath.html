@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- PWA: 홈 화면 추가 (아이콘/이름은 manifest.json과 icon-*.png 교체로 변경 가능) -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#f5f0e8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="소미쌤">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>호흡 · somi_ssam</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
+
+/* ══════════════════════════════════════
+   CSS 변수 / 테마
+══════════════════════════════════════ */
+:root {
+  --bg:#0a0a0f; --surface:#13131a; --surface2:#1c1c27; --border:#2a2a3d;
+  --accent:#7c6af7; --accent2:#f76ac8; --accent3:#6af7c8; --counting:#f7c26a;
+  --text:#e8e8f0; --text2:#8888aa;
+  --col-wait:#f7c26a; --col-inhale:#7c6af7; --col-write:#f76ac8;
+  --tier-lv1:#C0C8D0; --tier-lv2:#E8C200;
+}
+.theme-ivory {
+  --bg:#f5f0e8; --surface:#fffdf7; --surface2:#f0ebe0; --border:#d8cfc0;
+  --accent:#6b5ce7; --accent2:#e05fa0; --accent3:#2db89a; --counting:#c8960a;
+  --text:#2a2420; --text2:#7a6e60;
+  --col-wait:#c8960a; --col-inhale:#6b5ce7; --col-write:#e05fa0;
+  --tier-lv1:#6A7280; --tier-lv2:#E8C200;
+}
+
+/* ══════════════════════════════════════
+   리셋 / 기본
+══════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+button{font-family:inherit;cursor:pointer;}
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ══════════════════════════════════════
+   헤더 (vocal_lab 기준 통일)
+══════════════════════════════════════ */
+.lab-header{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.lab-brand{display:flex;flex-direction:column;gap:1px;text-align:right;}
+.lab-brand .brand-title{font-size:1.3rem;font-weight:800;letter-spacing:-0.5px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:'DM Mono',monospace;}
+.lab-brand .brand-sub{font-size:0.65rem;color:var(--text2);letter-spacing:3px;text-transform:uppercase;}
+.rest-dday-header{flex-shrink:0;margin-top:4px;font-size:0.76rem;font-weight:700;color:#7e8aa3;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.rest-dday-header .dot{width:6px;height:6px;border-radius:50%;background:#7e8aa3;flex-shrink:0;}
+/* 종료반 안개 가림 */
+.ended-fog-wrap{position:relative;overflow:hidden;max-height:62vh;}
+.ended-fog-wrap .pattern-cards{max-height:none;}
+.ended-fog-veil{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;z-index:5;
+  background:linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 28%, var(--bg) 72%, var(--bg) 100%);}
+.theme-ivory .ended-fog-veil{background:linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 28%, var(--bg) 72%, var(--bg) 100%);}
+.ended-fog-dots{position:absolute;left:0;right:0;bottom:10px;z-index:6;text-align:center;color:var(--text2);font-size:1.5rem;letter-spacing:5px;opacity:0.45;pointer-events:none;}
+.home-link{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);text-decoration:none;font-size:0.85rem;font-weight:500;transition:all 0.2s;font-family:inherit;white-space:nowrap;flex-shrink:0;}
+.home-link:hover{border-color:var(--accent);color:var(--text);}
+
+/* ══════════════════════════════════════
+   패턴 선택 화면
+══════════════════════════════════════ */
+.pattern-select{max-width:600px;margin:0 auto;padding:28px 20px 60px;}
+.select-title{font-size:1.1rem;font-weight:700;margin-bottom:6px;}
+.select-desc{color:var(--text2);font-size:0.82rem;margin-bottom:24px;line-height:1.6;}
+.pattern-cards{display:flex;flex-direction:column;gap:12px;}
+
+/* 패턴 카드 */
+.pattern-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;cursor:pointer;transition:all 0.2s;position:relative;}
+.pattern-card:hover:not(.locked){border-color:var(--accent);transform:translateX(4px);}
+.pattern-card h3{font-size:0.95rem;font-weight:600;margin-bottom:4px;}
+.pattern-card p{color:var(--text2);font-size:0.78rem;line-height:1.5;}
+.pattern-meta{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center;}
+.meta-tag{font-size:0.68rem;padding:3px 9px;border-radius:20px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.lv-badge{font-size:0.7rem;padding:2px 8px;border-radius:8px;font-weight:800;border:2px solid;background:transparent;}
+
+/* 잠금 카드 */
+.pattern-card.locked{opacity:0.45;cursor:default;}
+.lock-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.8rem;border-radius:14px;background:rgba(10,10,15,0.18);}
+.theme-ivory .lock-overlay{background:rgba(245,240,232,0.18);}
+
+/* ══════════════════════════════════════
+   연습 화면
+══════════════════════════════════════ */
+#practice-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:200;flex-direction:column;overflow-y:auto;}
+.prac-header{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+.prac-header h2{font-size:0.95rem;font-weight:600;flex:1;}
+.back-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:10px;font-size:0.85rem;font-weight:500;transition:all 0.2s;font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.back-btn:hover{border-color:var(--accent);color:var(--text);}
+.refresh-btn{background:none;border:none;color:var(--text2);width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all 0.2s;padding:0;}
+.refresh-btn:hover{color:var(--accent);background:none;}
+.refresh-btn svg{display:block;}
+.prac-body{display:flex;flex-direction:column;align-items:center;padding:24px 20px 52px;gap:22px;max-width:560px;margin:0 auto;width:100%;}
+
+/* 모드 탭 */
+.mode-tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.m-tab{padding:9px 22px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:0.88rem;transition:all 0.2s;}
+.m-tab.active{background:var(--accent);border-color:var(--accent);color:white;font-weight:600;}
+
+/* 버티기 목표 탭 */
+.hold-tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+
+/* 박자 행 */
+.beat-row{display:flex;gap:16px;align-items:center;justify-content:center;width:100%;max-width:420px;padding:0 12px;box-sizing:border-box;overflow:hidden;}
+.beat-num{font-family:'DM Mono',monospace;font-size:2.8rem;font-weight:700;color:var(--border);transition:color 0.08s,text-shadow 0.08s,transform 0.08s;min-width:0;text-align:center;line-height:1;flex-shrink:0;}
+.beat-num.col-wait{color:rgba(247,194,106,0.35);}
+.beat-num.col-inhale{color:rgba(124,106,247,0.35);}
+.beat-num.col-write{color:rgba(247,106,200,0.6);}
+.beat-num.active-counting{color:var(--counting);text-shadow:0 0 24px rgba(247,194,106,0.8),0 0 48px rgba(247,194,106,0.4);transform:scale(1.15);}
+.beat-num.active-exhale{color:var(--accent);text-shadow:0 0 24px rgba(124,106,247,0.8),0 0 48px rgba(124,106,247,0.4);transform:scale(1.15);}
+.beat-num.active-inhale{color:var(--col-inhale) !important;text-shadow:none;transform:scale(1.15);}
+.beat-num.active-inhale-bright{color:var(--col-inhale);text-shadow:0 0 24px rgba(124,106,247,0.8),0 0 48px rgba(124,106,247,0.4);transform:scale(1.15);}
+.beat-num.active-write{color:var(--accent2);text-shadow:0 0 24px rgba(247,106,200,0.9),0 0 48px rgba(247,106,200,0.5);transform:scale(1.18);}
+
+/* 쓰기호흡 진행 바 */
+.progress-bar-wrap{width:100%;max-width:420px;}
+.write-segments{width:100%;max-width:420px;}
+.write-seg{padding:10px 4px;border-radius:10px;text-align:center;font-size:0.78rem;font-weight:600;opacity:0.4;transition:opacity 0.15s,box-shadow 0.15s;min-width:0;overflow:hidden;white-space:nowrap;}
+.write-seg.wait{background:rgba(247,194,106,0.2);color:var(--col-wait);border:1.5px solid rgba(247,194,106,0.4);}
+.write-seg.inhale{background:rgba(124,106,247,0.2);color:var(--col-inhale);border:1.5px solid rgba(124,106,247,0.4);}
+.write-seg.write-s{background:rgba(247,106,200,0.2);color:var(--col-write);border:1.5px solid rgba(247,106,200,0.4);}
+.write-seg.active{opacity:1;}
+.write-seg.active.wait{box-shadow:0 0 10px rgba(247,194,106,0.5);}
+.write-seg.active.inhale{box-shadow:0 0 10px rgba(124,106,247,0.5);}
+.write-seg.active.write-s{box-shadow:0 0 10px rgba(247,106,200,0.5);}
+
+/* 인포박스 */
+.info-box{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:20px 24px;text-align:center;width:100%;max-width:420px;min-height:96px;height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden;}
+.info-action{font-size:2.1rem;font-weight:700;transition:all 0.2s;line-height:1.2;white-space:nowrap;}
+.info-sub{font-size:0.85rem;color:var(--text2);}
+
+/* 타이머 */
+.timer-wrap{text-align:center;}
+.timer-main{font-family:'DM Mono',monospace;font-size:3rem;font-weight:500;letter-spacing:1px;color:var(--text);}
+.timer-main.running{color:var(--accent3);}
+
+/* 컨트롤 */
+.controls{display:flex;gap:14px;align-items:center;}
+.ctrl-btn{width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;font-size:1.3rem;transition:all 0.2s;display:flex;align-items:center;justify-content:center;}
+.ctrl-btn svg{display:block;}
+.ctrl-btn.reset{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.ctrl-btn.reset:hover{border-color:var(--counting);color:var(--counting);}
+.ctrl-btn.play{background:var(--accent);color:white;width:68px;height:68px;font-size:1.5rem;}
+.ctrl-btn.play:hover{background:#6a58e8;transform:scale(1.05);}
+.ctrl-btn.stop{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.ctrl-btn.stop:hover{border-color:#f76a6a;color:#f76a6a;}
+
+/* 루프 카운터 */
+.loop-counter{font-family:'DM Mono',monospace;font-size:1.65rem;font-weight:700;color:var(--text2);margin-top:2px;}
+
+/* 볼륨 */
+.vol-wrap{width:100%;max-width:420px;display:flex;flex-direction:column;gap:8px;}
+.vol-row{display:flex;align-items:center;gap:10px;font-size:0.78rem;color:var(--text2);}
+.vol-row span{min-width:70px;}
+.vol-row input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer;}
+
+/* 서브 탭 (쓰기 기간 선택 등) */
+.sub-tabs{display:flex;gap:8px;flex-wrap:wrap;}
+.sub-tab{padding:8px 18px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:0.82rem;transition:all 0.2s;}
+.sub-tab.active{background:var(--accent);border-color:var(--accent);color:white;font-weight:600;}
+
+/* 성공 오버레이 */
+#success-overlay{display:none;position:fixed;inset:0;background:rgba(10,10,15,0.96);z-index:300;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+.success-btn{padding:14px 36px;background:var(--accent);border:none;border-radius:14px;color:white;font-size:1rem;font-family:inherit;cursor:pointer;font-weight:500;}
+@keyframes bounce{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+</style>
+<script src="common_core.js"></script>
+</head>
+<body>
+
+<!-- ══════════ HEADER ══════════ -->
+<header class="lab-header">
+  
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button onclick="labRefresh()" aria-label="새로고침" title="최신 데이터 불러오기" style="background:none;border:none;color:var(--text2);width:38px;height:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex-shrink:0;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+    <a class="home-link" href="somi_ssam_student.html">← 학생 홈</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    
+    <div class="lab-brand">
+      <div class="brand-title">호흡</div>
+      <div class="brand-sub">BREATH · SOMI_SSAM</div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════ 패턴 선택 ══════════ -->
+<div class="pattern-select" id="pattern-select">
+  <div class="select-head-row" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+    <div style="flex:1;min-width:0;">
+      <div class="select-title">호흡 연습</div>
+      <div class="select-desc">복식호흡과 호흡 조절 훈련</div>
+    </div>
+    <div id="rest-dday-header" class="rest-dday-header" style="display:none;"></div>
+  </div>
+  <div class="pattern-cards" id="pattern-cards"></div>
+</div>
+
+<!-- ══════════ 연습 화면 ══════════ -->
+<div id="practice-screen">
+  <div class="prac-header">
+    <button class="refresh-btn" onclick="labRefresh()" aria-label="새로고침" title="최신 데이터 불러오기"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+    <button class="back-btn" onclick="closePractice()">← 뒤로</button>
+    <h2 id="prac-title">호흡 연습</h2>
+  </div>
+  <div class="prac-body" id="prac-body"></div>
+</div>
+
+<!-- ══════════ 성공 오버레이 ══════════ -->
+<div id="success-overlay">
+  <div style="font-size:5rem;animation:bounce 0.6s ease;">🎉</div>
+  <div style="font-size:2.2rem;font-weight:700;color:var(--accent3);">성공!</div>
+  <div style="color:var(--text2);font-size:1rem;" id="success-sub"></div>
+  <button class="success-btn" onclick="closeSuccess()">다시 도전하기</button>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   somi_ssam_breath.html  v2 (완전 독립 재설계)
+
+   [ 섹션 A ] 호흡 패턴 데이터 (BREATH_PATTERNS)
+   [ 섹션 B ] 레벨 기본값
+   [ 섹션 C ] 저장/로드 · 잠금 헬퍼
+   [ 섹션 D ] 오디오 엔진
+   [ 섹션 E ] 스케줄러 (breathCycle / breathWrite / breathHold)
+   [ 섹션 F ] 연습 UI 빌더
+   [ 섹션 G ] 비주얼 업데이트
+   [ 섹션 H ] 종료 · 기록
+   [ 섹션 I ] 카드 렌더 · 진입점
+════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════
+   【 섹션 A 】 호흡 패턴 데이터
+   ──────────────────────────────────────────────
+   새 패턴 추가 방법:
+   1. 아래 BREATH_PATTERNS 배열에 객체 추가
+   2. scheduler 값: 'breathCycle' | 'breathWrite' | 'breathHold'
+   3. 엔진 코드(섹션 D·E) 수정 불필요
+════════════════════════════════════════════════ */
+const BREATH_PATTERNS = [
+  {
+    id: 'breath_full',
+    name: '전체 호흡',
+    desc: '시간에 맞추어 내 호흡 전체의 양과 근육의 움직임을 느껴가며 조절하는 연습',
+    level: 'lv1', bpm: 60,
+    tags: ['60 BPM', '기본 / 연습'],
+    modeLabels: ['기본', '연습'],
+    scheduler: 'breathCycle',
+  },
+  {
+    id: 'breath_write',
+    name: '쓰기 호흡',
+    desc: '필요한 만큼을 마시고 어떻게, 얼만큼 마셨든 잘 써보는 연습',
+    level: 'lv2', bpm: 60,
+    tags: ['60 BPM', '기본 / 연습'],
+    modeLabels: ['기본', '연습'],
+    scheduler: 'breathWrite',
+  },
+  {
+    id: 'breath_hold',
+    name: '버티기 호흡',
+    desc: 'S(스) 발음으로 노래에 쓰일 최소한의 양을 조절하며 길게 버텨보는 연습',
+    level: 'lv3', bpm: 60,
+    tags: ['60 BPM', '15s / 30s / 45s / 60s / ∞'],
+    modeLabels: null, // 모드 탭 없음
+    scheduler: 'breathHold',
+  },
+];
+
+/* ════════════════════════════════════════════════
+   【 섹션 B 】 레벨 기본값
+════════════════════════════════════════════════ */
+const DEFAULT_LEVEL_SETTINGS = [
+  { id: 'lv1', label: 'Lv1' },
+  { id: 'lv2', label: 'Lv2' },
+  { id: 'lv3', label: 'Lv3' },
+  { id: 'ing', label: 'ing' },
+];
+
+/* ════════════════════════════════════════════════
+   【 섹션 C 】 저장/로드 · 잠금 헬퍼
+════════════════════════════════════════════════ */
+/* 저장/불러오기: common_core.js의 공용 window.saveData/window.loadData 사용.
+   (공용이 없을 만일의 경우를 대비한 폴백 — 기존 동작과 동일) */
+if (typeof window.loadData !== 'function') {
+  window.loadData = function(key, def){ try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; } };
+}
+if (typeof window.saveData !== 'function') {
+  window.saveData = function(key, val){ try { const j=JSON.stringify(val); localStorage.setItem(key, j); if(window._fsSet) window._fsSet(key, j); } catch(e) {} };
+}
+
+/* ══════════ 연습기록 병합 (덮어쓰기 방지 — 동기화 전 쌓인 기록 보존) ══════════
+   같은 학생끼리 배열을 합치되 완전중복(date+time+exercise+duration)은 1개만 유지 */
+if(typeof window._mergeLogs!=='function'){
+window._mergeLogs=function(local, remote){
+  local = local || {}; remote = remote || {};
+  const out = {};
+  const ids = new Set([...Object.keys(local), ...Object.keys(remote)]);
+  ids.forEach(id=>{
+    const a = Array.isArray(local[id]) ? local[id] : [];
+    const b = Array.isArray(remote[id]) ? remote[id] : [];
+    const seen = new Set(); const merged = [];
+    [...a, ...b].forEach(rec=>{
+      if(!rec) return;
+      const key = (rec.date||'')+'|'+(rec.time||'')+'|'+(rec.exercise||'')+'|'+(rec.duration||'');
+      if(seen.has(key)) return;
+      seen.add(key); merged.push(rec);
+    });
+    out[id] = merged;
+  });
+  return out;
+};
+}
+// (다리 함수 제거: 같은 이름이라 자기 자신을 무한 호출하던 버그. 호출부는 window._mergeLogs를 직접 사용)
+
+let patternLocks        = loadData('somi_pattern_locks', {});
+let patternLevelOverrides = loadData('somi_pattern_levels', {});
+let levelSettings       = loadData('somi_level_settings', null) || DEFAULT_LEVEL_SETTINGS.map(l=>({...l}));
+let practiceLogs        = loadData('somi_logs', {});
+let currentProfileId    = null; // student.html에서 넘어온 프로필 id
+
+// ── 접속기록 + 복귀 시 변경감지 재동기화 ──
+let _fsDb = null, _fsDoc = null, _fsGetDoc = null;
+let _lastSyncTs = 0;
+let _resyncPending = false;
+if(typeof window._readSyncTs!=='function'){
+window._readSyncTs=function(){
+  try{
+    const m=JSON.parse(localStorage.getItem('somi_sync_meta')||'{}');
+    return Number(m.ts||m.value||0)||0;
+  }catch(e){ return 0; }
+};
+}
+/* STEP I 후속 수정: 함수 선언은 호이스팅으로 window._readSyncTs(common_core 본체)를
+   덮어써 무한재귀를 일으켰다. const 참조로 바꿔 본체를 그대로 가리키게 한다.
+   (common_core 미로드 시를 대비한 폴백 포함 — 기존 동작과 동일) */
+const _readSyncTs = (typeof window._readSyncTs==="function")
+  ? window._readSyncTs
+  : function(){ try{ const m=JSON.parse(localStorage.getItem("somi_sync_meta")||"{}"); return Number(m.ts||m.value||0)||0; }catch(e){ return 0; } };
+async function labRefresh() {
+  somiShowLoading('최신 데이터 불러오는 중...');
+  try {
+    const { initializeApp, getApps } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js");
+    const { getFirestore, doc, getDoc } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js");
+    const FB_CONFIG={apiKey:"AIzaSyCgCdb1pNtcTxEp7APdUW-aeOsJ33v1IhI",authDomain:"somi-ssam.firebaseapp.com",projectId:"somi-ssam",storageBucket:"somi-ssam.firebasestorage.app",messagingSenderId:"841594074779",appId:"1:841594074779:web:c37fd00db5a8883cf0f83e"};
+    const APP_NAME='somi-breath-v2';
+    const fbApp=getApps().find(a=>a.name===APP_NAME)||initializeApp(FB_CONFIG,APP_NAME);
+    const fsDb=getFirestore(fbApp);
+    const KEYS=['somi_pattern_locks','somi_pattern_levels','somi_level_settings','somi_class_settings','somi_rest_start_dates','somi_logs'];
+    await Promise.all(KEYS.map(async k=>{
+      const snap=await getDoc(doc(fsDb,'somi_data',k)); if(snap.exists()) localStorage.setItem(k,snap.data().value);
+    }));
+    renderPatternCards();
+  } catch(e) {
+    alert('새로고침 실패: 네트워크를 확인해주세요');
+  }
+  somiHideLoading();
+}
+
+function _recordAccess(){
+  if(!currentProfileId) return;
+  try{
+    const now=new Date();
+    const dateStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    const timeStr=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+    const aLog=JSON.parse(localStorage.getItem('somi_access_log')||'{}');
+    if(!aLog[currentProfileId]) aLog[currentProfileId]=[];
+    const arr=aLog[currentProfileId];
+    const idx=arr.findIndex(r=>r.date===dateStr);
+    if(idx>=0){ arr[idx].time=timeStr; } else { arr.push({date:dateStr,time:timeStr}); }
+    const j=JSON.stringify(aLog);
+    localStorage.setItem('somi_access_log',j);
+    if(window._fsSet) window._fsSet('somi_access_log',j);
+  }catch(e){}
+}
+async function _checkAndResync(){
+  if(!_fsDb||!_fsGetDoc||!_fsDoc) return;
+  try{
+    const snap=await _fsGetDoc(_fsDoc(_fsDb,'somi_data','somi_sync_meta'));
+    if(!snap.exists()) return;
+    localStorage.setItem('somi_sync_meta', snap.data().value);
+    const serverTs=_readSyncTs();
+    if(serverTs<=_lastSyncTs) return;
+    const KEYS=['somi_pattern_locks','somi_pattern_levels','somi_level_settings','somi_class_settings','somi_rest_start_dates'];
+    await Promise.all(KEYS.map(async k=>{
+      try{ const s=await _fsGetDoc(_fsDoc(_fsDb,'somi_data',k)); if(s.exists()) localStorage.setItem(k,s.data().value); }catch(e){}
+    }));
+    patternLocks=loadData('somi_pattern_locks',{});
+    patternLevelOverrides=loadData('somi_pattern_levels',{});
+    levelSettings=loadData('somi_level_settings',null)||DEFAULT_LEVEL_SETTINGS.map(l=>({...l}));
+    _lastSyncTs=serverTs;
+    renderPatternCards();
+    _maybeShowRestStagePopup();
+  }catch(e){}
+}
+
+/* ════════════════════════════════════════════════
+   휴식반(숨고르기) 단계 자동 잠금 · 종료반 가림 — 호흡 독립 복제
+════════════════════════════════════════════════ */
+// 휴식 단계별 "호흡 허용 패턴" (발성 패턴은 발성 페이지 담당)
+const _REST_BREATH_ALLOWED = {
+  month1:    ['breath_full','breath_write'],
+  month2to3: ['breath_full','breath_write'],
+  month4plus: [],
+};
+function _getProfileClass(){
+  if(!currentProfileId) return null;
+  try{ const cs=loadData('somi_class_settings',{}); return (cs[currentProfileId]||{}).voClass||null; }catch(e){ return null; }
+}
+function _getRestStartDate(){
+  if(!currentProfileId) return null;
+  try{ const r=loadData('somi_rest_start_dates',{}); return r[currentProfileId]||null; }catch(e){ return null; }
+}
+function _getRestStage(startDateStr){
+  if(!startDateStr) return 'month1';
+  const start=new Date(startDateStr+'T00:00:00'); const now=new Date();
+  let months=(now.getFullYear()-start.getFullYear())*12+(now.getMonth()-start.getMonth());
+  if(now.getDate()<start.getDate()) months--;
+  if(months<1) return 'month1';
+  if(months<3) return 'month2to3';
+  return 'month4plus';
+}
+function _getRestDays(startDateStr){
+  if(!startDateStr) return 0;
+  const start=new Date(startDateStr+'T00:00:00'); const now=new Date();
+  return Math.floor((now-start)/86400000)+1;
+}
+function _isRestClass(){ return _getProfileClass()==='숨고르기'; }
+function _isEndedClass(){ return _getProfileClass()==='종료반'; }
+
+// 잠금 여부: 종료반=전부잠금, 휴식반=원래열림∩단계허용 교집합, 그 외=기존 규칙
+function isLocked(patternId) {
+  if (!currentProfileId) return false;
+  const pl = patternLocks[currentProfileId];
+  const baseOpen = pl ? (pl[patternId]===true) : true; // 잠금데이터 없는 구버전=열림
+  if(_isEndedClass()) return true;
+  if(_isRestClass()){
+    const stage=_getRestStage(_getRestStartDate());
+    const allowed=_REST_BREATH_ALLOWED[stage]||[];
+    return !(baseOpen && allowed.includes(patternId));
+  }
+  if (!pl) return true; // 잠금 데이터 없으면 기본 잠금 (가입직후/유실 = 잠김)
+  return pl[patternId] !== true;
+}
+
+// 패턴 레벨 (선생님 변경 우선)
+function getPatternLevel(patternId) {
+  return patternLevelOverrides[patternId] || (BREATH_PATTERNS.find(p=>p.id===patternId)||{}).level;
+}
+
+// 테마 적용
+let currentTheme = loadData('somi_theme', 'dark');
+function applyTheme() {
+  document.body.classList.toggle('theme-ivory', currentTheme === 'ivory');
+}
+
+/* ════════════════════════════════════════════════
+   【 섹션 D 】 오디오 엔진
+════════════════════════════════════════════════ */
+let audioCtx=null, masterGain=null, metronomeGain=null, userGain=null;
+let metronomeVol = 1.0, userVol = 1.0;
+
+// ── iPad Safari 오디오 언락 v4 (breath): 세션 활성화 + SR기억 + 정찰병 자동 교체 ──
+// WebKit 버그: 컨텍스트 샘플레이트와 하드웨어 출력이 불일치하면 state와 무관하게 클럭(currentTime)이 0에 동결됨
+const _SILENT_WAV='data:audio/wav;base64,UklGRoQJAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YWAJAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA=';
+let _silentEl=null,_clockWatchdog=null,_ctxRebuilds=0,_needGestureRebuild=false,_awaitClock=false;
+let _probes=[]; // 샘플레이트 정찰병 컨텍스트 [{ctx,sr}]
+const _SR_KEY='somi_audio_sr'; // 이 기기에서 클럭이 도는 것으로 확인된 샘플레이트 (모듈 공유)
+function _storedSR(){try{const v=parseInt(localStorage.getItem(_SR_KEY)||'0',10);return(v===44100||v===48000)?v:0;}catch(e){return 0;}}
+function _rememberSR(sr){try{localStorage.setItem(_SR_KEY,String(sr));}catch(e){}}
+function _srForAttempt(n){
+  const st=_storedSR();const seq=[st||0,44100,48000].filter((v,i,a)=>a.indexOf(v)===i);
+  return seq[n%seq.length];
+}
+function _setIOSSession(){
+  try{if(navigator.audioSession&&navigator.audioSession.type!=='playback')navigator.audioSession.type='playback';}catch(e){}
+}
+function _playSilentElement(){
+  try{
+    if(!_silentEl){_silentEl=document.createElement('audio');_silentEl.setAttribute('playsinline','');_silentEl.loop=true;_silentEl.src=_SILENT_WAV;}
+    const p=_silentEl.play();if(p&&p.catch)p.catch(()=>{});
+  }catch(e){}
+}
+function _stopSilentElement(){try{if(_silentEl){_silentEl.pause();_silentEl.currentTime=0;}}catch(e){}}
+function _audioDiag(tag){
+  try{
+    const sess=(navigator.audioSession&&navigator.audioSession.state)||'API없음';
+    console.log('[AUDIO-진단 '+tag+'] state='+(audioCtx?audioCtx.state:'없음')
+      +' sr='+(audioCtx?audioCtx.sampleRate:'-')
+      +' t='+(audioCtx?audioCtx.currentTime.toFixed(4):'-')
+      +' session='+sess+' rebuilds='+_ctxRebuilds);
+  }catch(e){}
+}
+function _wireGains(){
+  masterGain=audioCtx.createGain();masterGain.gain.value=1.95;
+  userGain=audioCtx.createGain();userGain.gain.value=userVol;
+  masterGain.connect(userGain);userGain.connect(audioCtx.destination);
+  metronomeGain=audioCtx.createGain();metronomeGain.gain.value=metronomeVol;metronomeGain.connect(masterGain);
+}
+function _buildCtx(){
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;
+  _setIOSSession();
+  const sr=_srForAttempt(_ctxRebuilds);
+  try{audioCtx=sr?new AC({sampleRate:sr}):new AC();}
+  catch(e){audioCtx=new AC();}
+  _wireGains();
+  _audioDiag('생성');
+  return true;
+}
+function _unlockAudio(){
+  if(!audioCtx)return;
+  try{
+    if(audioCtx.state!=='running')audioCtx.resume().catch(()=>{});
+    const buf=audioCtx.createBuffer(1,1,22050),src=audioCtx.createBufferSource();
+    src.buffer=buf;src.connect(audioCtx.destination);src.start(0);
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    g.gain.value=0.0001;o.connect(g);g.connect(audioCtx.destination);
+    o.start(0);o.stop(audioCtx.currentTime+0.05);
+  }catch(e){}
+  _playSilentElement();
+}
+function _makeProbes(){
+  if(_probes.length||!audioCtx)return;
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  [44100,48000].forEach(sr=>{
+    if(audioCtx&&audioCtx.sampleRate===sr)return;
+    try{
+      const c=new AC({sampleRate:sr});
+      if(c.state!=='running')c.resume().catch(()=>{});
+      const b=c.createBuffer(1,1,22050),bs=c.createBufferSource();
+      bs.buffer=b;bs.connect(c.destination);bs.start(0);
+      _probes.push({ctx:c,sr:sr});
+    }catch(e){}
+  });
+  if(_probes.length)console.log('[AUDIO] 정찰병 컨텍스트 생성: '+_probes.map(p=>p.sr).join(', '));
+}
+function _closeProbes(){
+  _probes.forEach(p=>{try{p.ctx.close().catch(()=>{});}catch(e){}});
+  _probes=[];
+}
+function _adoptProbe(p){
+  
+  try{if(audioCtx)audioCtx.close().catch(()=>{});}catch(e){}
+  audioCtx=p.ctx;
+  _wireGains();
+  _probes=_probes.filter(x=>x!==p);
+  _closeProbes();
+  _rememberSR(p.sr);
+  _awaitClock=true; // 스케줄러가 새 클럭에 자동 재앵커
+}
+function _teardownCtx(){
+  try{if(audioCtx)audioCtx.close().catch(()=>{});}catch(e){}
+  audioCtx=null;masterGain=null;metronomeGain=null;userGain=null;
+}
+function _gestureRebuild(){
+  // ★ 반드시 유저 제스처 콜스택 안에서만 호출
+  _needGestureRebuild=false;
+  _ctxRebuilds++;
+  _teardownCtx();
+  if(_buildCtx()){_unlockAudio();_awaitClock=true;console.log('[AUDIO] 제스처 내 컨텍스트 재생성 #'+_ctxRebuilds+' (sr시도='+(_srForAttempt(_ctxRebuilds)||'기본')+')');}
+}
+function _startClockWatchdog(){
+  if(_clockWatchdog)clearInterval(_clockWatchdog);
+  let tries=0;
+  _clockWatchdog=setInterval(()=>{
+    if(!audioCtx){clearInterval(_clockWatchdog);_clockWatchdog=null;return;}
+    if(audioCtx.currentTime>0){
+      clearInterval(_clockWatchdog);_clockWatchdog=null;_needGestureRebuild=false;_ctxRebuilds=0;
+      _stopSilentElement();_rememberSR(audioCtx.sampleRate);_closeProbes();
+      
+      return;}
+    tries++;
+    if(tries>=2&&_probes.length){
+      const live=_probes.find(p=>{try{return p.ctx.currentTime>0;}catch(e){return false;}});
+      if(live){_adoptProbe(live);return;}
+    }
+    if(tries===3){try{audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{});}catch(e){}_audioDiag('정지·소생시도');}
+    else if(tries>=10){
+      clearInterval(_clockWatchdog);_clockWatchdog=null;_needGestureRebuild=true;
+      _audioDiag('기동실패');
+      console.warn('[AUDIO] 클럭 기동 실패 — 다음 터치에서 샘플레이트 바꿔 재생성');
+    }
+  },100);
+}
+function initAudio(){
+  if(!audioCtx){if(!_buildCtx())return;}
+  _unlockAudio();
+}
+function ensureAudio(){
+  if(_needGestureRebuild){_gestureRebuild();}
+  else if(!audioCtx)initAudio();
+  else _unlockAudio();
+  if(audioCtx&&audioCtx.currentTime<=0){_makeProbes();_startClockWatchdog();}
+}
+// ★ touchstart는 iOS 오디오 언락 제스처 불인정 — 컨텍스트 '생성' 금지, 기존 ctx 언락만
+document.addEventListener('touchstart',()=>{if(audioCtx)_unlockAudio();},{passive:true,capture:true});
+document.addEventListener('touchend',ensureAudio,{passive:true,capture:true});
+document.addEventListener('click',ensureAudio,{passive:true});
+
+function playClick(type, time) {
+  if (!audioCtx) return;
+  try {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.connect(g); g.connect(metronomeGain);
+    const f = type==='accent' ? 1200 : type==='soft' ? 600 : 900;
+    const v = type==='accent' ? 0.4  : type==='soft' ? 0.18 : 0.28;
+    o.frequency.value = f; o.type = 'sine';
+    g.gain.setValueAtTime(v, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+    o.start(time); o.stop(time + 0.1);
+  } catch(e) {}
+}
+
+/* ════════════════════════════════════════════════
+   【 섹션 E 】 스케줄러
+   ──────────────────────────────────────────────
+   공통 런타임 변수
+════════════════════════════════════════════════ */
+let EX = '', TMODE = 'basic', SUB = '4', HTARGET = 15;
+// 재생/일시정지 아이콘 (이모지 대신 테마색 SVG)
+const ICON_PLAY  = '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5z"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>';
+function setPlayIcon(playing) { const pb = document.getElementById('play-btn'); if (pb) pb.innerHTML = playing ? ICON_PAUSE : ICON_PLAY; }
+let seqPhase = 'counting', seqStep = 0, loopCount = 0;
+let isPlaying = false, isPaused = false;
+let mainStartWallTime = 0, elapsedSeconds = 0, pausedElapsed = 0;
+let nextBeatTime = 0, beatInterval = 1;
+let schedulerTimer = null, timerRafId = null;
+let beatQueue = [];
+let stopScheduled = false, stopSuccess = false, stopAudioTime = 0;
+
+function currentPat() { return BREATH_PATTERNS.find(p => p.id === EX); }
+
+/* ── E-1. 메인 루프 ── */
+function startEngine() {
+  // ═══ iPad Safari: 제스처 콜스택 안에서 동기식으로 생성+언락+정찰병까지 일사천리 ═══
+  if (_needGestureRebuild) _gestureRebuild();
+  if (!audioCtx) initAudio();
+  if (!audioCtx) return;
+  _unlockAudio();
+  if (audioCtx.currentTime <= 0) { _makeProbes(); _awaitClock = true; _startClockWatchdog(); }
+
+  const pat = currentPat(); if (!pat) return;
+  beatInterval = 60 / pat.bpm;
+
+  if (isPaused) {
+    // 일시정지에서 재개
+    const resumeAt = audioCtx.currentTime + 0.05;
+    mainStartWallTime = Date.now() - pausedElapsed * 1000 + (resumeAt - audioCtx.currentTime) * 1000;
+    nextBeatTime = resumeAt;
+    isPaused = false;
+  } else {
+    const pat = currentPat();
+    window.__SOMI_LOGGED_THIS_RUN = false; // 새 재생 시작 — 중복방지 플래그 초기화(공통)
+    // 쓰기호흡: 카운팅 없이 바로 main 진입 (패턴 안에 카운팅이 내장되어 있음)
+    if (pat && pat.scheduler === 'breathWrite') {
+      seqPhase = 'main'; seqStep = 0; loopCount = 1;
+      nextBeatTime = audioCtx.currentTime + 0.05;
+      mainStartWallTime = Date.now() + 0.05 * 1000;
+    } else {
+      seqPhase = 'counting'; seqStep = 0; loopCount = 0;
+      nextBeatTime = audioCtx.currentTime + 0.05;
+      mainStartWallTime = 0;
+    }
+  }
+
+  isPlaying = true;
+  setPlayIcon(true);
+  schedulerTimer = setInterval(schedulerTick, 25);
+  timerRafId = requestAnimationFrame(timerFrame);
+}
+
+function schedulerTick() {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  // Safari 안전장치: 클럭이 0이면 대기, 움직이기 시작한 순간 재앵커
+  if (_awaitClock) {
+    if (now <= 0) return;
+    nextBeatTime = now + 0.05;
+    _awaitClock = false;
+  }
+  while (nextBeatTime < now + 0.15) {
+    if (stopScheduled && nextBeatTime >= stopAudioTime) break;
+    scheduleOneBeat(nextBeatTime);
+    nextBeatTime += beatInterval;
+  }
+}
+
+function scheduleOneBeat(time) {
+  let clickType = 'normal', vis = null;
+
+  if (seqPhase === 'counting') {
+    const idx = seqStep;
+    clickType = idx === 0 ? 'accent' : 'normal';
+    vis = { phase: 'counting', idx };
+    seqStep++;
+    if (seqStep >= 4) {
+      if (stopScheduled) { playClick(clickType, time); beatQueue.push({time, vis}); return; }
+      seqPhase = 'main'; seqStep = 0;
+      if (mainStartWallTime === 0) mainStartWallTime = Date.now() + (time + beatInterval - audioCtx.currentTime) * 1000;
+      loopCount++;
+    }
+  } else {
+    // main 구간 — 패턴별 분기
+    const pat = currentPat(); if (!pat) return;
+    if      (pat.scheduler === 'breathCycle') { const r = schedBreathCycle(time); clickType = r.clickType; vis = r.vis; }
+    else if (pat.scheduler === 'breathWrite') { const r = schedBreathWrite(time);  clickType = r.clickType; vis = r.vis; }
+    else if (pat.scheduler === 'breathHold')  { const r = schedBreathHold(time);   clickType = r.clickType; vis = r.vis; }
+  }
+
+  playClick(clickType, time);
+  beatQueue.push({ time, vis });
+}
+
+/* ── E-2. breathCycle (전체호흡) ── */
+function schedBreathCycle(time) {
+  const beats = parseInt(SUB) || 4;
+  const total = beats * 2; // 내쉬기 beats + 마시기 beats
+  const isExhale = seqStep < beats;
+  const idx = seqStep % beats;
+
+  const vis = { phase: isExhale ? 'exhale' : 'inhale', idx, loop: loopCount };
+  const clickType = isExhale ? 'normal' : 'soft';
+
+  seqStep++;
+  if (seqStep >= total) {
+    seqStep = 0;
+    loopCount++;
+    // 기본 모드: loopCount가 8을 초과하면 다음 루프 시작 전 종료
+    if (TMODE === 'basic' && loopCount > 8) {
+      scheduleStop(time + beatInterval);
+    }
+  }
+  return { clickType, vis };
+}
+
+/* ── E-3. breathWrite (쓰기호흡) ── */
+function schedBreathWrite(time) {
+  const st = parseInt(SUB) || 2;
+  const total = 4 + st; // 기다리기3 + 마시기1 + 쓰기st
+
+  let clickType, vis;
+  if (seqStep < 3)        { clickType = 'normal';  vis = { phase: 'waiting', idx: seqStep, total, loop: loopCount }; }
+  else if (seqStep === 3) { clickType = 'accent';  vis = { phase: 'inhale',  idx: seqStep, total, loop: loopCount }; }
+  else                    { clickType = 'soft';    vis = { phase: 'write',   idx: seqStep, total, loop: loopCount }; }
+
+  seqStep++;
+  if (seqStep >= total) {
+    seqStep = 0;
+    loopCount++;
+    if (TMODE === 'basic' && loopCount > 8) scheduleStop(time + beatInterval);
+  }
+  return { clickType, vis };
+}
+
+/* ── E-4. breathHold (버티기호흡) ── */
+function schedBreathHold(time) {
+  const vis = { phase: 'hold', step: seqStep + 1 };
+  seqStep++;
+  // 이미 종료 예약됐으면 중복 호출 방지
+  if (!stopScheduled && HTARGET > 0 && seqStep >= HTARGET) {
+    scheduleStop(time + beatInterval, true);
+  }
+  return { clickType: 'soft', vis };
+}
+
+/* ── E-5. 종료 예약 ── */
+function scheduleStop(audioTime, success = false) {
+  stopScheduled = true; stopSuccess = success;
+  stopAudioTime = audioTime;
+}
+
+/* ── E-6. 타이머 RAF ── */
+function timerFrame(ts) {
+  // 비주얼 업데이트: 재생 시간이 된 beat 처리
+  const now = audioCtx ? audioCtx.currentTime : 0;
+  while (beatQueue.length && beatQueue[0].time <= now + 0.02) {
+    const { vis } = beatQueue.shift();
+    applyVisual(vis);
+  }
+  // 종료 처리
+  if (stopScheduled && audioCtx && audioCtx.currentTime >= stopAudioTime - 0.1) {
+    stopScheduled = false;
+    logPractice(); // 자동완료 시 항상 로그 저장 (목표달성/일반완료 모두)
+    stopEngine();
+    // 타이머/일시정지 상태는 stopEngine()이 이미 정리함. elapsedSeconds는 안 건드림
+    // — 자동완료 후 화면에 마지막 연습시간을 남기기 위함(발성·리듬과 동일). 중복방지는 공통 __SOMI_LOGGED_THIS_RUN.
+    if (stopSuccess) showSuccess('목표 시간 달성! 🎉');
+    else showSuccess('기본 모드 완료!');
+    return;
+  }
+  // 경과 시간 업데이트
+  if (isPlaying && mainStartWallTime > 0) {
+    elapsedSeconds = (Date.now() - mainStartWallTime) / 1000;
+    const tm = document.getElementById('timer-main');
+    if (tm) {
+      const s = Math.max(0, Math.floor(elapsedSeconds));
+      const cs = Math.floor((elapsedSeconds - Math.floor(elapsedSeconds)) * 100);
+      tm.textContent = String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0') + '.' + String(cs).padStart(2,'0');
+      tm.className = 'timer-main running';
+    }
+  }
+  timerRafId = requestAnimationFrame(timerFrame);
+}
+
+/* ════════════════════════════════════════════════
+   【 섹션 F 】 연습 UI 빌더
+════════════════════════════════════════════════ */
+function startExercise(id) {
+  if (isLocked(id)) return;
+  // 스크롤 위치 저장 (뒤로 갔을 때 복원용)
+  sessionStorage.setItem('somi_breath_scroll', String(window.scrollY));
+  initAudio(); EX = id;
+  const pat = currentPat(); if (!pat) return;
+
+  // 초기값
+  if (id === 'breath_full')  { SUB = '4'; TMODE = 'basic'; }
+  if (id === 'breath_write') { SUB = '2'; TMODE = 'basic'; }
+  if (id === 'breath_hold')  { HTARGET = 15; TMODE = 'basic'; }
+
+  document.getElementById('prac-title').textContent = pat.name;
+  buildPracticeUI();
+  document.getElementById('pattern-select').style.display = 'none';
+  document.getElementById('practice-screen').style.display = 'flex';
+  somiScrollTop();  // 연습화면 진입 시 맨 위로
+  // 화면이 보인 뒤(폭이 잡힌 뒤) 자동 맞춤 실행
+  requestAnimationFrame(() => requestAnimationFrame(fitAllBreath));
+}
+
+function closePractice() {
+  stopExercise();
+  document.getElementById('practice-screen').style.display = 'none';
+  document.getElementById('pattern-select').style.display = 'block';
+  // 뒤로가기 시 스크롤 위치 복원
+  const savedY = sessionStorage.getItem('somi_breath_scroll');
+  if (savedY) requestAnimationFrame(() => window.scrollTo(0, parseInt(savedY) || 0));
+}
+
+function buildPracticeUI() {
+  const body = document.getElementById('prac-body'); body.innerHTML = '';
+  const pat = currentPat(); if (!pat) return;
+
+  /* ── 버티기: 목표 시간 탭 ── */
+  if (pat.scheduler === 'breathHold') {
+    const ht = document.createElement('div'); ht.className = 'hold-tabs';
+    [['15s','15'],['30s','30'],['45s','45'],['60s','60'],['∞','0']].forEach(([lbl, val]) => {
+      const b = document.createElement('button'); b.className = 'm-tab';
+      if ((val==='0' && HTARGET===0)||(val!=='0' && parseInt(val)===HTARGET)) b.classList.add('active');
+      b.textContent = lbl;
+      b.onclick = () => { HTARGET = parseInt(val); ht.querySelectorAll('.m-tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); hardReset(); };
+      ht.appendChild(b);
+    });
+    body.appendChild(ht);
+  }
+
+  /* ── 기본/연습 탭 ── */
+  if (pat.modeLabels) {
+    const mt = document.createElement('div'); mt.className = 'mode-tabs';
+    pat.modeLabels.forEach(label => {
+      const val = label === '기본' ? 'basic' : 'free';
+      const b = document.createElement('button'); b.className = 'm-tab' + (TMODE===val?' active':'');
+      b.textContent = label;
+      b.onclick = () => { TMODE=val; mt.querySelectorAll('.m-tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); hardReset(); };
+      mt.appendChild(b);
+    });
+    body.appendChild(mt);
+  }
+
+  /* ── 쓰기호흡: 박자 수 선택 (2, 3, 4박만) ── */
+  if (pat.scheduler === 'breathWrite') {
+    const st = document.createElement('div'); st.className = 'sub-tabs';
+    [['2박','2'],['3박','3'],['4박','4']].forEach(([lbl, val]) => {
+      const b = document.createElement('button'); b.className = 'sub-tab' + (SUB===val?' active':'');
+      b.textContent = lbl;
+      b.onclick = () => { SUB=val; st.querySelectorAll('.sub-tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); resetAndRebuild(); };
+      st.appendChild(b);
+    });
+    body.appendChild(st);
+  }
+
+  /* ── 전체호흡: 박자 수 선택 ── */
+  if (pat.scheduler === 'breathCycle') {
+    const st = document.createElement('div'); st.className = 'sub-tabs';
+    [['4박','4'],['5박','5'],['6박','6'],['7박','7'],['8박','8']].forEach(([lbl, val]) => {
+      const b = document.createElement('button'); b.className = 'sub-tab' + (SUB===val?' active':'');
+      b.textContent = lbl;
+      b.onclick = () => { SUB=val; st.querySelectorAll('.sub-tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); resetAndRebuild(); };
+      st.appendChild(b);
+    });
+    body.appendChild(st);
+  }
+
+  /* ── 박자 표시 행 ── */
+  const br = document.createElement('div'); br.className = 'beat-row'; br.id = 'beat-row';
+
+  if (pat.scheduler === 'breathHold') {
+    // 버티기: 카운팅 4개 + 큰 숫자 레이어
+    const holdWrap = document.createElement('div');
+    holdWrap.style.cssText = 'position:relative;width:220px;height:90px;display:flex;align-items:center;justify-content:center;';
+    const countLayer = document.createElement('div'); countLayer.id = 'hold-count-layer';
+    countLayer.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:12px;';
+    for (let i=0; i<4; i++) {
+      const s = document.createElement('span'); s.className = 'beat-num'; s.id = 'bn-'+i;
+      s.style.fontSize = '2.8rem'; s.textContent = i+1; countLayer.appendChild(s);
+    }
+    holdWrap.appendChild(countLayer);
+    const holdNumLayer = document.createElement('div'); holdNumLayer.id = 'hold-num-layer';
+    holdNumLayer.style.cssText = 'position:absolute;inset:0;display:none;align-items:center;justify-content:center;';
+    const bigNum = document.createElement('span'); bigNum.id = 'hold-big-num';
+    bigNum.style.cssText = 'font-family:"DM Mono",monospace;font-size:4rem;font-weight:700;color:var(--accent3);text-shadow:0 0 24px rgba(106,247,200,0.8);';
+    bigNum.textContent = '1'; holdNumLayer.appendChild(bigNum);
+    holdWrap.appendChild(holdNumLayer);
+    br.appendChild(holdWrap);
+
+  } else if (pat.scheduler === 'breathWrite') {
+    // 쓰기호흡: 카운팅 없이 바로 패턴 박자만 표시
+    const beats = parseInt(SUB) || 2;
+    const getWriteLabels = () => ['1','2','3','4', ...Array.from({length:beats},(_,i)=>String(i+1))];
+    getWriteLabels().forEach((lbl, i) => {
+      const s = document.createElement('span'); s.className = 'beat-num'; s.id = 'bn-'+i; s.textContent = lbl;
+      if (i < 3) s.classList.add('col-wait');
+      else if (i === 3) s.classList.add('col-inhale');
+      else s.classList.add('col-write');
+      br.appendChild(s);
+    });
+
+  } else {
+    // breathCycle: 카운팅 레이어(1~4) + 패턴 레이어(n박) 분리
+    const beats = parseInt(SUB) || 4;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;';
+
+    // 카운팅 레이어 (1~4, 카운팅 중에만 보임)
+    const countLayer = document.createElement('div'); countLayer.id = 'bc-count-layer';
+    countLayer.style.cssText = 'display:flex;gap:16px;align-items:center;justify-content:center;';
+    for (let i=0; i<4; i++) {
+      const s = document.createElement('span'); s.className = 'beat-num'; s.id = 'bc-'+i; s.textContent = i+1;
+      countLayer.appendChild(s);
+    }
+
+    // 패턴 레이어 (n박, 패턴 진입 후에만 보임)
+    const patLayer = document.createElement('div'); patLayer.id = 'bc-pat-layer';
+    patLayer.style.cssText = 'display:none;gap:16px;align-items:center;justify-content:center;';
+    for (let i=0; i<beats; i++) {
+      const s = document.createElement('span'); s.className = 'beat-num'; s.id = 'bn-'+i; s.textContent = i+1;
+      patLayer.appendChild(s);
+    }
+
+    wrap.appendChild(countLayer); wrap.appendChild(patLayer);
+    br.appendChild(wrap);
+  }
+  body.appendChild(br);
+
+  /* ── 쓰기호흡 전용 진행바 + 세그먼트 ── */
+  if (pat.scheduler === 'breathWrite') {
+    const st = parseInt(SUB) || 2;
+    const total = 4 + st; // 기다리기3 + 마시기1 + 쓰기st
+
+    // ── 컨테이너: 전체 너비 기준, 모든 요소가 같은 grid ──
+    const writeWrap = document.createElement('div');
+    writeWrap.id = 'write-wrap';
+    writeWrap.style.cssText = 'width:100%;max-width:420px;display:flex;flex-direction:column;gap:6px;';
+
+    // ── 숫자 라벨 행: grid로 total 등분, 마지막 경계는 absolute로 오른쪽 끝 ──
+    const numRow = document.createElement('div'); numRow.id = 'pb-num-row';
+    numRow.style.cssText = `position:relative;display:grid;grid-template-columns:repeat(${total},1fr);width:100%;`;
+    const labels = ['1','2','3','4', ...Array.from({length:st},(_,i)=>String(i+1))];
+    labels.forEach((lbl, i) => {
+      const cell = document.createElement('div');
+      cell.style.cssText = 'display:flex;align-items:center;justify-content:flex-start;';
+      const span = document.createElement('span'); span.id = 'pbn-'+i;
+      span.style.cssText = `font-family:'DM Mono',monospace;font-size:0.72rem;font-weight:600;transition:color 0.1s,text-shadow 0.1s;`;
+      if (i<3) span.style.color='rgba(247,194,106,0.4)';
+      else if (i===3) span.style.color='rgba(160,140,255,0.5)';
+      else span.style.color='rgba(247,106,200,0.4)';
+      span.textContent = lbl;
+      cell.appendChild(span); numRow.appendChild(cell);
+    });
+    // 쓰기 끝 경계 숫자 — 숨김 처리 (보이면 안 됨)
+    const endSpan = document.createElement('span'); endSpan.id = 'pbn-'+total;
+    endSpan.style.cssText = `display:none;position:absolute;right:0;top:0;font-family:'DM Mono',monospace;font-size:0.72rem;font-weight:600;color:rgba(247,106,200,0.4);transition:color 0.1s,text-shadow 0.1s;`;
+    endSpan.textContent = String(st+1);
+    numRow.appendChild(endSpan);
+    writeWrap.appendChild(numRow);
+
+    // ── 진행 바: 같은 grid, 컬러 구간 정확히 일치 ──
+    const track = document.createElement('div');
+    track.style.cssText = `position:relative;width:100%;height:3px;border-radius:2px;overflow:visible;display:grid;grid-template-columns:repeat(${total},1fr);`;
+
+    // 각 박 칸에 색상 배경
+    for (let i=0; i<total; i++) {
+      const cell = document.createElement('div');
+      if (i<3) cell.style.background='rgba(247,194,106,0.25)';
+      else if (i===3) cell.style.background='rgba(124,106,247,0.25)';
+      else cell.style.background='rgba(247,106,200,0.25)';
+      // 박 사이 구분선
+      if (i<total-1) cell.style.borderRight='1px solid rgba(255,255,255,0.08)';
+      track.appendChild(cell);
+    }
+
+    // 커서 (절대 위치, 트랙 위에 띄움)
+    const trackWrap = document.createElement('div');
+    trackWrap.style.cssText = 'position:relative;width:100%;';
+    trackWrap.appendChild(track);
+    const cursor = document.createElement('div'); cursor.id = 'pb-cursor';
+    cursor.style.cssText = 'position:absolute;top:-5px;left:0%;width:3px;height:13px;border-radius:2px;background:white;box-shadow:0 0 8px 2px white;transition:left 1s linear,background 0.15s,box-shadow 0.15s;';
+    trackWrap.appendChild(cursor);
+    writeWrap.appendChild(trackWrap);
+
+    // ── 세그먼트 박스: 같은 grid, 정확히 3:1:st ──
+    const seg = document.createElement('div'); seg.className = 'write-segments';
+    seg.style.cssText = `display:grid;grid-template-columns:3fr 1fr ${st}fr;gap:6px;width:100%;`;
+    const ws  = document.createElement('div'); ws.className  = 'write-seg wait';    ws.textContent = '기다리기';
+    const is2 = document.createElement('div'); is2.className = 'write-seg inhale';  is2.textContent = '마시기';
+    const wrs = document.createElement('div'); wrs.className = 'write-seg write-s'; wrs.textContent = '쓰기';
+    seg.appendChild(ws); seg.appendChild(is2); seg.appendChild(wrs);
+    writeWrap.appendChild(seg);
+
+    body.appendChild(writeWrap);
+  }
+
+  /* ── 인포박스 ── */
+  const ib = document.createElement('div'); ib.className = 'info-box';
+  const ia = document.createElement('div'); ia.className = 'info-action'; ia.id = 'info-action'; ia.textContent = '시작 버튼을 눌러주세요';
+  const is2 = document.createElement('div'); is2.className = 'info-sub'; is2.id = 'info-sub'; is2.textContent = '';
+  ib.appendChild(ia); ib.appendChild(is2); body.appendChild(ib);
+
+  /* ── 타이머 ── */
+  const tw = document.createElement('div'); tw.className = 'timer-wrap';
+  const tm = document.createElement('div'); tm.className = 'timer-main'; tm.id = 'timer-main'; tm.textContent = '00:00.00';
+  const lcc = document.createElement('div'); lcc.className = 'loop-counter'; lcc.id = 'loop-counter';
+  lcc.textContent = pat.scheduler === 'breathHold' ? '0/'+(HTARGET>0?HTARGET:'∞') : '0/'+(TMODE==='basic'?'8':'∞');
+  tw.appendChild(tm); tw.appendChild(lcc); body.appendChild(tw);
+
+  /* ── 컨트롤 ── */
+  const ctrl = document.createElement('div'); ctrl.className = 'controls';
+  const SVG_RESET = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>';
+  const SVG_PLAY = '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5z"/></svg>';
+  const SVG_STOP = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2.5"/></svg>';
+  ctrl.innerHTML = `<button class="ctrl-btn reset" onclick="hardReset()" aria-label="다시">${SVG_RESET}</button><button class="ctrl-btn play" id="play-btn" onclick="togglePlay()" aria-label="재생">${SVG_PLAY}</button><button class="ctrl-btn stop" onclick="stopExercise()" aria-label="정지">${SVG_STOP}</button>`;
+  body.appendChild(ctrl);
+
+  /* ── 볼륨 슬라이더 ── */
+  const vw = document.createElement('div'); vw.className = 'vol-wrap';
+  const vr = document.createElement('div'); vr.className = 'vol-row';
+  vr.innerHTML = '<span>메트로놈</span>';
+  const sl = document.createElement('input'); sl.type = 'range'; sl.min = '0'; sl.max = '100'; sl.value = String(Math.round(metronomeVol*100));
+  sl.oninput = () => { metronomeVol = parseInt(sl.value)/100; if(metronomeGain) metronomeGain.gain.value = metronomeVol; };
+  vr.appendChild(sl); vw.appendChild(vr);
+  const ugR = document.createElement('div'); ugR.className = 'vol-row';
+  ugR.innerHTML = '<span>마스터</span>';
+  const ugS = document.createElement('input'); ugS.type = 'range'; ugS.min = '0'; ugS.max = '200'; ugS.value = String(Math.round(userVol*100)); ugS.style.cssText='flex:1;accent-color:var(--accent3);cursor:pointer;';
+  ugS.oninput = () => { userVol = parseInt(ugS.value)/100; if(userGain) userGain.gain.value = userVol; };
+  ugR.appendChild(ugS); vw.appendChild(ugR); body.appendChild(vw);
+  // 빌드 후 화면 폭이 잡히면 자동 맞춤
+  requestAnimationFrame(() => requestAnimationFrame(fitAllBreath));
+}
+
+function resetAndRebuild() { stopEngine(); elapsedSeconds=0; buildPracticeUI(); }
+function hardReset() { stopEngine(); elapsedSeconds=0; isPaused=false; pausedElapsed=0; buildPracticeUI(); }
+
+function togglePlay() {
+  if (isPlaying) pauseEngine();
+  else startEngine();
+}
+
+/* ════════════════════════════════════════════════
+   【 섹션 G 】 비주얼 업데이트
+════════════════════════════════════════════════ */
+// 텍스트가 박스 폭을 넘으면 한 줄에 들어갈 때까지 폰트를 자동 축소.
+// maxRem: 기본(여유 있을 때) 크기, minRem: 하한.
+// 현재 호흡 화면의 박자 숫자/라벨을 화면 폭에 맞게 한 번에 조정.
+function fitAllBreath() {
+  const beats = parseInt(SUB) || 4;
+  // breathCycle 패턴 레이어
+  const pl = document.getElementById('bc-pat-layer');
+  if (pl) fitBeatRow(pl, beats);
+  // 쓰기호흡 큰 숫자 행 (4 + 쓰기박수)
+  const wr = document.getElementById('write-wrap');
+  const br = document.getElementById('beat-row');
+  if (wr && br) fitBeatRow(br, 4 + beats);
+  // 세그먼트 라벨 한 줄
+  document.querySelectorAll('.write-seg').forEach(s => fitTextOneLine(s, 0.78, 0.46));
+  // 인포 박스 한 줄
+  const ae = document.getElementById('info-action');
+  if (ae) fitTextOneLine(ae, 2.1, 1.0);
+}
+
+function fitTextOneLine(el, maxRem, minRem) {
+  if (!el) return;
+  el.style.whiteSpace = 'nowrap';
+  el.style.fontSize = maxRem + 'rem';
+  // 부모(박스)의 가용 내폭 기준. el 자신의 패딩은 글자 영역 밖이므로 scrollWidth와 비교.
+  let rem = maxRem;
+  // scrollWidth(실제 글자폭) > clientWidth(보이는폭)면 넘친 것
+  let guard = 0;
+  while (el.scrollWidth > el.clientWidth && rem > minRem && guard < 40) {
+    rem = Math.max(minRem, rem - 0.06);
+    el.style.fontSize = rem.toFixed(3) + 'rem';
+    guard++;
+  }
+}
+
+// 박자 숫자 자동 맞춤: 박스 가로폭에 균등 분배(최대 간격 제한), 넘치면 폰트 축소.
+function fitBeatRow(layerEl, n) {
+  if (!layerEl || !n) return;
+  const row = document.querySelector('.beat-row');
+  const base = (row && row.clientWidth) ? row.clientWidth : window.innerWidth;
+  const avail = Math.min(420, base - 24);
+  const glyph = 32;     // 2.8rem 숫자 1글자 대략 폭(px)
+  const GAP_MAX = 36;   // 숫자가 적을 때 너무 벌어지지 않게 간격 상한
+  const GAP_MIN = 4;
+  // 남은 공간을 간격으로 균등 분배(박스 폭에 맞춰 펼침)
+  let gap = n > 1 ? (avail - n * glyph) / (n - 1) : 0;
+  gap = Math.max(GAP_MIN, Math.min(GAP_MAX, gap));
+  // 균등 분배로도(최소 간격에서) 넘치면 폰트 축소(2.8rem → 하한 1.6rem)
+  let fontRem = 2.8;
+  const needed = n * glyph + (n - 1) * gap;
+  if (needed > avail) {
+    const scale = (avail - (n - 1) * gap) / (n * glyph);
+    fontRem = Math.max(1.6, 2.8 * Math.max(0.57, scale));
+  }
+  layerEl.style.gap = gap.toFixed(1) + 'px';
+  layerEl.querySelectorAll('.beat-num').forEach(s => { s.style.fontSize = fontRem.toFixed(2) + 'rem'; });
+}
+
+function applyVisual(vis) {
+  if (!vis) return;
+  const pat = currentPat(); if (!pat) return;
+
+  if (vis.phase === 'counting') {
+    if (pat.scheduler === 'breathHold') {
+      const cl = document.getElementById('hold-count-layer'); if(cl) cl.style.display = 'flex';
+      const nl = document.getElementById('hold-num-layer');  if(nl) nl.style.display = 'none';
+      for (let i=0; i<4; i++) {
+        const el = document.getElementById('bn-'+i); if(!el) continue;
+        el.className = 'beat-num' + (i===vis.idx ? ' active-counting' : '');
+      }
+    } else if (pat.scheduler === 'breathCycle') {
+      // 카운팅 레이어 보이고 패턴 레이어 숨김
+      const cl = document.getElementById('bc-count-layer'); if(cl) cl.style.display = 'flex';
+      const pl = document.getElementById('bc-pat-layer');   if(pl) pl.style.display = 'none';
+      for (let i=0; i<4; i++) {
+        const el = document.getElementById('bc-'+i); if(!el) continue;
+        el.className = 'beat-num' + (i===vis.idx ? ' active-counting' : '');
+      }
+    } else {
+      const el = document.getElementById('bn-'+vis.idx); if(el) el.className = 'beat-num active-counting';
+    }
+    setInfoBox('카운팅', '');
+    return;
+  }
+
+  // 쓰기호흡: waiting / write / inhale 전부 applyWriteVisual로 (순서 중요 — exhale/inhale 분기보다 먼저)
+  if (vis.phase === 'waiting' || vis.phase === 'write' || (vis.phase === 'inhale' && pat.scheduler === 'breathWrite')) {
+    applyWriteVisual(vis);
+    return;
+  }
+
+  if (vis.phase === 'exhale' || vis.phase === 'inhale') {
+    // breathCycle: 카운팅 레이어 숨기고 패턴 레이어 보임
+    const cl = document.getElementById('bc-count-layer'); if(cl) cl.style.display = 'none';
+    const pl = document.getElementById('bc-pat-layer');   if(pl) pl.style.display = 'flex';
+    const beats = parseInt(SUB) || 4;
+    if (pl && !pl.dataset.fitted) { pl.dataset.fitted = '1'; fitBeatRow(pl, beats); }
+    const cls = vis.phase === 'exhale' ? 'active-exhale' : 'active-inhale';
+    for (let i=0; i<beats; i++) {
+      const el = document.getElementById('bn-'+i); if (!el) continue;
+      el.className = 'beat-num' + (i===vis.idx ? ' '+cls : '');
+    }
+    const loopMax = TMODE === 'basic' ? '8' : '∞';
+    const lcc = document.getElementById('loop-counter'); if(lcc) lcc.textContent = (vis.loop||0)+'/'+loopMax;
+    setInfoBox(vis.phase === 'exhale' ? '내쉬기' : '마시기', '');
+    return;
+  }
+
+  if (vis.phase === 'hold') {
+    const cl = document.getElementById('hold-count-layer'); if(cl) cl.style.display = 'none';
+    const nl = document.getElementById('hold-num-layer');  if(nl) nl.style.display = 'flex';
+    const bn = document.getElementById('hold-big-num');    if(bn) bn.textContent = vis.step;
+    const lcc = document.getElementById('loop-counter');
+    if (lcc) { const tk = HTARGET > 0 ? HTARGET : '∞'; lcc.textContent = vis.step+'/'+tk; }
+    setInfoBox('S(스)', '');
+    return;
+  }
+}
+
+function applyWriteVisual(vis) {
+  const st = parseInt(SUB) || 2, total = 4 + st;
+  const phaseColor = { waiting:'rgba(230,165,20,1)', inhale:'rgba(124,106,247,1)', write:'rgba(247,106,200,1)' };
+  const phaseDim   = { waiting:'rgba(247,194,106,0.35)', inhale:'rgba(124,106,247,0.45)', write:'rgba(247,106,200,0.35)' };
+  const phaseGlow  = { waiting:'0 0 10px rgba(230,165,20,0.9)', inhale:'0 0 14px rgba(124,106,247,1)', write:'0 0 10px rgba(247,106,200,0.9)' };
+  const colorMap   = { waiting:'active-counting', inhale:'active-inhale-bright', write:'active-write' };
+
+  // 박자 숫자 하이라이트
+  for (let i=0; i<total; i++) {
+    const el = document.getElementById('bn-'+i); if (!el) continue;
+    el.className = 'beat-num';
+    if (i<3) el.classList.add('col-wait');
+    else if (i===3) el.classList.add('col-inhale');
+    else el.classList.add('col-write');
+  }
+  const activeEl = document.getElementById('bn-'+vis.idx);
+  if (activeEl) activeEl.className = 'beat-num ' + (colorMap[vis.phase] || 'active-counting');
+
+  // 커서: grid 기준 — 현재 박 왼쪽 끝 → 다음 박 왼쪽 끝으로 이동
+  // 각 칸 너비 = 1/total, i번째 칸 왼쪽 = i/total * 100%
+  const cursor = document.getElementById('pb-cursor');
+  if (cursor) {
+    const curPct  = (vis.idx / total) * 100;
+    const nextPct = ((vis.idx + 1) / total) * 100;
+    cursor.style.background  = phaseColor[vis.phase] || 'white';
+    cursor.style.boxShadow   = '0 0 10px 3px ' + (phaseColor[vis.phase] || 'white');
+    if (vis.idx === 0) {
+      cursor.style.transition = 'none';
+      cursor.style.left = curPct + '%';
+      requestAnimationFrame(() => {
+        cursor.style.transition = 'left ' + beatInterval + 's linear,background 0.15s,box-shadow 0.15s';
+        cursor.style.left = nextPct + '%';
+      });
+    } else {
+      cursor.style.transition = 'left ' + beatInterval + 's linear,background 0.15s,box-shadow 0.15s';
+      cursor.style.left = nextPct + '%';
+    }
+  }
+
+  // 숫자 라벨 하이라이트 (grid셀 안에 있으므로 색상만)
+  for (let i=0; i<total; i++) {
+    const span = document.getElementById('pbn-'+i); if (!span) continue;
+    let phase = 'waiting'; if (i===3) phase='inhale'; else if (i>=4) phase='write';
+    if (i === vis.idx) { span.style.color = phaseColor[phase]; span.style.textShadow = phaseGlow[phase]; }
+    else               { span.style.color = phaseDim[phase];   span.style.textShadow = 'none'; }
+  }
+
+  // 세그먼트 활성화
+  const segs = document.querySelectorAll('.write-seg'); segs.forEach(s=>s.classList.remove('active'));
+  if (vis.phase==='waiting' && segs[0]) segs[0].classList.add('active');
+  else if (vis.phase==='inhale'  && segs[1]) segs[1].classList.add('active');
+  else if (vis.phase==='write'   && segs[2]) segs[2].classList.add('active');
+
+  setInfoBox(({waiting:'기다리기', inhale:'마시기', write:'쓰기'})[vis.phase] || '', '');
+
+  const loopMax = TMODE==='basic' ? '8' : '∞';
+  const lcc = document.getElementById('loop-counter'); if(lcc) lcc.textContent = (vis.loop||0)+'/'+loopMax;
+}
+
+function setInfoBox(a, s) {
+  const ae = document.getElementById('info-action'); if(ae){ ae.textContent = a; fitTextOneLine(ae, 2.1, 1.0); }
+  const se = document.getElementById('info-sub');    if(se) se.textContent = s;
+}
+
+/* ════════════════════════════════════════════════
+   【 섹션 H 】 종료 · 기록
+════════════════════════════════════════════════ */
+function pauseEngine() {
+  isPlaying = false;
+  clearInterval(schedulerTimer); schedulerTimer = null;
+  cancelAnimationFrame(timerRafId); timerRafId = null;
+  setPlayIcon(false);
+  const tm = document.getElementById('timer-main'); if(tm) tm.className = 'timer-main';
+  isPaused = true; pausedElapsed = elapsedSeconds;
+}
+
+function stopEngine() {
+  pauseEngine();
+  beatQueue = []; stopScheduled = false;
+  seqPhase = 'counting'; seqStep = 0; loopCount = 0; mainStartWallTime = 0;
+  isPaused = false; pausedElapsed = 0; // 완전 정지 — 재개 아님
+}
+
+function stopExercise() {
+  if (isPlaying || elapsedSeconds > 2) logPractice();
+  stopEngine();
+  elapsedSeconds = 0; isPaused = false; pausedElapsed = 0;
+  if(_resyncPending){ _resyncPending=false; _checkAndResync(); }
+  // 비주얼 초기화
+  document.querySelectorAll('.beat-num').forEach(b => b.className = 'beat-num');
+  const tm = document.getElementById('timer-main'); if(tm) { tm.textContent='00:00.00'; tm.className='timer-main'; }
+  const pb = document.getElementById('pb-cursor'); if(pb) { pb.style.transition='none'; pb.style.left='0%'; }
+  const bn = document.getElementById('hold-big-num'); if(bn) bn.remove();
+  const cl = document.getElementById('hold-count-layer'); if(cl) cl.style.display='flex';
+  const nl = document.getElementById('hold-num-layer');  if(nl) nl.style.display='none';
+  document.querySelectorAll('.write-seg').forEach(s=>s.classList.remove('active'));
+  setInfoBox('시작 버튼을 눌러주세요', '');
+}
+
+function logPractice() {
+  if (!currentProfileId || elapsedSeconds < 2) return;
+  const pat = currentPat(); if (!pat) return;
+  // ── 음식: 호흡 고유의 exercise 이름 조립 ──
+  const exercise = pat.name + (SUB ? ' ('+SUB+')' : '');
+  // ── 그릇: 중복방지·재병합·저장·전송은 공통 _appendPracticeLog 1벌이 담당 ──
+  if(typeof window._appendPracticeLog==='function') window._appendPracticeLog(currentProfileId, 'breath', exercise, elapsedSeconds);
+}
+
+function showSuccess(msg) {
+  // 라벨박스(info-box) 안에서 메시지 표시
+  const ae = document.getElementById('info-action');
+  const se = document.getElementById('info-sub');
+  if (ae) { ae.textContent = '🎉 ' + msg; fitTextOneLine(ae, 1.4, 0.9); }
+  if (se) se.textContent = '↺ 버튼으로 다시 도전';
+  // 플레이 버튼 초기화
+  setPlayIcon(false);
+}
+function closeSuccess() {
+  document.getElementById('success-overlay').style.display = 'none';
+  hardReset();
+}
+
+/* ════════════════════════════════════════════════
+   【 섹션 I 】 카드 렌더 · 진입점
+════════════════════════════════════════════════ */
+function renderPatternCards() {
+  
+const _TIER_COLORS_BREATH=['var(--tier-lv1)','var(--tier-lv2)','#00C9B1','#00B4FF','#AA44FF','#FF8C00','#FF4444'];
+function _getBreathLevelColor(lvId){
+  if(!lvId||lvId==='ing') return null;
+  const m=lvId.match(/^lv(\d+)$/i);
+  if(m){const idx=parseInt(m[1])-1;return _TIER_COLORS_BREATH[idx%_TIER_COLORS_BREATH.length];}
+  try{
+    const settings=JSON.parse(localStorage.getItem('somi_level_settings')||'null');
+    if(settings){const idx=settings.findIndex(l=>l.id===lvId);if(idx>=0)return _TIER_COLORS_BREATH[idx%_TIER_COLORS_BREATH.length];}
+  }catch(e){}
+  return null;
+}
+
+  const container = document.getElementById('pattern-cards'); container.innerHTML = '';
+  // 이전 안개 정리 + 디데이 갱신
+  _clearEndedFog();
+  _renderRestDday();
+  const ended=_isEndedClass();
+
+  BREATH_PATTERNS.forEach(pat => {
+    const locked = isLocked(pat.id);
+    const lvId = getPatternLevel(pat.id);
+    const lv = levelSettings.find(l => l.id === lvId);
+
+    const card = document.createElement('div');
+    card.className = 'pattern-card' + (locked ? ' locked' : '');
+
+    card.innerHTML = `
+      <h3>${pat.name}</h3>
+      <p>${pat.desc}</p>
+      <div class="pattern-meta">
+        ${lv ? (() => { const c=_getBreathLevelColor(lvId); const s=c?`color:${c};border-color:${c};background:transparent;`:''; return `<span class="lv-badge" style="${s}">${lv.label}</span>`; })() : ''}
+        ${pat.tags.map(t=>`<span class="meta-tag">${t}</span>`).join('')}
+        ${pat.modeLabels ? `<span class="meta-tag">${pat.modeLabels.join(' · ')}</span>` : ''}
+      </div>
+      ${locked ? '<div class="lock-overlay">🔒</div>' : ''}
+    `;
+
+    if (!locked) card.onclick = () => startExercise(pat.id);
+    container.appendChild(card);
+  });
+
+  // 종료반 안개 가림
+  if(ended) _applyEndedFog(container);
+
+  // 패턴 목록을 localStorage에 저장 → home.html(선생님)이 읽어서 관리
+  try {
+    const list = BREATH_PATTERNS.map(p => ({
+      id: p.id, name: p.name, desc: p.desc, chapter: 'breath',
+      bpm: p.bpm, level: p.level, modeLabels: p.modeLabels||['기본'], tags: p.tags,
+    }));
+    localStorage.setItem('somi_breath_patterns', JSON.stringify(list));
+  } catch(e) {}
+}
+
+// ── 휴식 디데이(헤더) · 종료반 안개 · 단계 팝업 (호흡 독립) ──
+function _renderRestDday(){
+  const el=document.getElementById('rest-dday-header'); if(!el) return;
+  if(!_isRestClass()){ el.style.display='none'; el.innerHTML=''; return; }
+  const days=_getRestDays(_getRestStartDate());
+  if(days<=0){ el.style.display='none'; return; }
+  el.innerHTML='<span class="dot"></span> 숨 고르기 · '+days+'일째';
+  el.style.display='flex';
+}
+function _applyEndedFog(container){
+  if(!container || !container.parentNode) return;
+  if(container.closest('.ended-fog-wrap')) return;
+  const wrap=document.createElement('div'); wrap.className='ended-fog-wrap';
+  container.parentNode.insertBefore(wrap, container);
+  wrap.appendChild(container);
+  const veil=document.createElement('div'); veil.className='ended-fog-veil'; wrap.appendChild(veil);
+  const dots=document.createElement('div'); dots.className='ended-fog-dots'; dots.textContent='···'; wrap.appendChild(dots);
+  document.body.style.overflow='hidden'; document.documentElement.style.overflow='hidden';
+}
+function _clearEndedFog(){
+  document.body.style.overflow=''; document.documentElement.style.overflow='';
+  const wrap=document.querySelector('.ended-fog-wrap');
+  if(wrap){ const cards=wrap.querySelector('#pattern-cards'); if(cards) wrap.parentNode.insertBefore(cards, wrap); wrap.remove(); }
+  document.querySelectorAll('.ended-fog-veil,.ended-fog-dots').forEach(el=>el.remove());
+}
+function _maybeShowRestStagePopup(){
+  if(!_isRestClass()) return;
+  const stage=_getRestStage(_getRestStartDate());
+  if(stage==='month1') return;
+  const seenKey='somi_rest_stage_seen_'+currentProfileId;
+  let seen=null; try{ seen=localStorage.getItem(seenKey); }catch(e){}
+  if(seen===stage) return;
+  const msg = stage==='month2to3'
+    ? '휴식 기간이 1개월을 넘어, 연습 패턴 범위가 자동으로 조정되었습니다.\n\n쉬어가는 동안 핵심 패턴 위주로 가볍게 유지하실 수 있도록 구성되었습니다. 수업을 재개하시면 이전 범위로 복원됩니다.'
+    : '휴식 기간이 3개월을 넘어, 연습 패턴이 모두 잠금 상태로 전환되었습니다.\n\n다시 함께하고 싶으실 때 언제든 선생님께 말씀해 주세요. 반갑게 다시 열어드리겠습니다.';
+  _showRestModal(stage==='month2to3'?'연습 범위가 조정되었어요':'연습이 잠시 멈춰졌어요', msg);
+  try{ localStorage.setItem(seenKey, stage); }catch(e){}
+}
+function _showRestModal(title, body){
+  let m=document.getElementById('rest-stage-modal');
+  if(!m){
+    m=document.createElement('div'); m.id='rest-stage-modal';
+    m.style.cssText='position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;padding:24px;';
+    m.innerHTML='<div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);"></div>'
+      +'<div style="position:relative;max-width:380px;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px 24px;box-shadow:0 20px 60px rgba(0,0,0,0.35);">'
+      +'<div id="rsm-title" style="font-size:1.02rem;font-weight:800;margin-bottom:12px;color:var(--text);"></div>'
+      +'<div id="rsm-body" style="font-size:0.86rem;line-height:1.7;color:var(--text2);white-space:pre-line;"></div>'
+      +'<button id="rsm-ok" style="margin-top:22px;width:100%;padding:12px;border-radius:11px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:0.9rem;font-weight:700;cursor:pointer;">확인</button>'
+      +'</div>';
+    document.body.appendChild(m);
+    m.querySelector('#rsm-ok').onclick=()=>{ m.style.display='none'; };
+  }
+  m.querySelector('#rsm-title').textContent=title;
+  m.querySelector('#rsm-body').textContent=body;
+  m.style.display='flex';
+}
+
+/* ── 초기화 ── */
+document.addEventListener('DOMContentLoaded', async function() {
+  applyTheme();
+
+  // student.html에서 넘어온 프로필 자동 로그인 (동기화 전에 먼저 확보)
+  currentProfileId = localStorage.getItem('somi_current_profile_id') || null;
+
+  // ── 로딩화면 표시 → 동기화 끝까지 완료 후 해제 ──
+  // 연습기록(somi_logs)을 받기 전에 학생이 연습을 끝내면 기록이 덮여 유실되므로
+  // 동기화가 끝날 때까지 화면을 막고, 실패 시 자동 재시도한다. (25초 후 비상구 버튼)
+  somiShowLoading('데이터 불러오는 중...');
+  let _offlineForced = false, _syncDone = false;
+  // 비상구 버튼이 눌리면 즉시 로컬 데이터로 진입
+  window.somiHideLoading = (function(orig){
+    return function(){ _offlineForced = true; orig(); _afterSync(true); };
+  })(window.somiHideLoading);
+
+  function _afterSync(offline){
+    if(_syncDone) return; _syncDone = true;
+    // 동기화로 받은 잠금/레벨/기록 반영
+    patternLocks          = loadData('somi_pattern_locks', {});
+    patternLevelOverrides = loadData('somi_pattern_levels', {});
+    levelSettings         = loadData('somi_level_settings', null) || DEFAULT_LEVEL_SETTINGS.map(l=>({...l}));
+    // 연습기록은 덮어쓰지 않고 이미 메모리에 쌓인 것과 병합
+    let remote = {}; try{ remote = JSON.parse(localStorage.getItem('somi_logs')||'{}'); }catch(e){}
+    practiceLogs = window._mergeLogs(practiceLogs, remote);
+    try{ _lastSyncTs = _readSyncTs(); }catch(e){}
+    renderPatternCards();
+    _maybeShowRestStagePopup();
+    _recordAccess();
+    if(!offline) somiHideLoading();
+  }
+
+  (async ()=>{
+    let fsDb=null, doc=null, getDoc=null, setDoc=null;
+    // 1단계: Firebase 모듈 로드 + 초기화 (성공할 때까지 재시도)
+    window.somiSetLoadText && window.somiSetLoadText('서버에 연결하는 중...');
+    while(!_offlineForced && !fsDb){
+      try{
+        const appMod = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js");
+        const fsMod  = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js");
+        const { initializeApp } = appMod;
+        ({ doc, getDoc, setDoc } = fsMod);
+        const fbApp = initializeApp({
+          apiKey: "AIzaSyCgCdb1pNtcTxEp7APdUW-aeOsJ33v1IhI",
+          authDomain: "somi-ssam.firebaseapp.com",
+          projectId: "somi-ssam",
+          storageBucket: "somi-ssam.firebasestorage.app",
+          messagingSenderId: "841594074779",
+          appId: "1:841594074779:web:c37fd00db5a8883cf0f83e"
+        }, 'somi-breath-v2');
+        fsDb = fsMod.getFirestore(fbApp);
+      }catch(e){
+        console.warn('breath Firebase 초기화 재시도:', e.message);
+        await new Promise(r=>setTimeout(r,1500));
+      }
+    }
+    if(_offlineForced) return;
+    _fsDb = fsDb; _fsDoc = doc; _fsGetDoc = getDoc; // 복귀 시 재동기화에 재사용
+    window._somiServerRead = async (key)=>{ try{ const s=await getDoc(doc(fsDb,'somi_data',key)); return s.exists()?s.data().value:null; }catch(e){ return null; } };
+    window._fsSet = async (k, j) => { try { await setDoc(doc(fsDb, "somi_data", k), { value: j }); } catch(e) {} };
+
+    // 2단계: 잠금+레벨+연습기록+메타 동기화 (모든 키 성공할 때까지 재시도)
+    window.somiSetLoadText && window.somiSetLoadText('기록 불러오는 중...');
+    const KEYS = ['somi_logs','somi_pattern_locks','somi_pattern_levels','somi_level_settings','somi_sync_meta'];
+    let _ok=false;
+    while(!_offlineForced && !_ok){
+      try{
+        await Promise.all(KEYS.map(async k => {
+          const snap = await getDoc(doc(fsDb, "somi_data", k));
+          if (snap.exists()) localStorage.setItem(k, snap.data().value);
+        }));
+        _ok=true;
+      }catch(e){
+        console.warn('breath 동기화 재시도:', e.message);
+        await new Promise(r=>setTimeout(r,1500));
+      }
+    }
+    if(_offlineForced) return;
+    _afterSync(false);
+  })();
+
+  // 페이지 이탈/백그라운드 전환 시 연습 로그 자동 저장 + 복귀 시 접속기록/재동기화
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='hidden'){
+      if(isPlaying||elapsedSeconds>2) logPractice();
+    }
+    if(document.visibilityState==='visible'){
+      _recordAccess();
+      if(isPlaying){ _resyncPending=true; } else { _checkAndResync(); }
+    }
+  });
+  window.addEventListener('pagehide',()=>{
+    if(isPlaying||elapsedSeconds>2) logPractice();
+  });
+  // 화면 회전/리사이즈 시 박자 숫자 재맞춤
+  let _fitTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(_fitTimer);
+    _fitTimer = setTimeout(() => {
+      const beats = parseInt(SUB) || 4;
+      const pl = document.getElementById('bc-pat-layer');
+      if (pl && pl.style.display !== 'none') fitBeatRow(pl, beats);
+      const wr = document.getElementById('write-wrap');
+      const br = document.getElementById('beat-row');
+      if (wr && br) fitBeatRow(br, 4 + beats); // 쓰기호흡: 4 + 쓰기박수
+      // 세그먼트 라벨 + 인포 박스 한 줄 재맞춤
+      document.querySelectorAll('.write-seg').forEach(s => fitTextOneLine(s, 0.78, 0.46));
+      const ae = document.getElementById('info-action');
+      if (ae) fitTextOneLine(ae, 2.1, 1.0);
+    }, 150);
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- PWA: 홈 화면 추가 (아이콘/이름은 manifest.json과 icon*.png 교체로 변경 가능) -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#f5f0e8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="소미쌤">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>somi_ssam</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
+:root{--bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c27;--border:#2a2a3d;--accent:#7c6af7;--accent2:#f76ac8;--accent3:#6af7c8;--counting:#f7c26a;--text:#e8e8f0;--text2:#8888aa;}
+.theme-ivory{--bg:#f5f0e8;--surface:#fffdf7;--surface2:#f0ebe0;--border:#d8cfc0;--accent:#6b5ce7;--accent2:#e05fa0;--accent3:#2db89a;--counting:#c8960a;--text:#2a2420;--text2:#7a6e60;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background 0.3s,color 0.3s;}
+button{font-family:inherit;cursor:pointer;}
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ── 공통 전체화면 ── */
+.full-screen{display:none;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:32px;padding:24px;background:radial-gradient(ellipse at 70% 80%,#1a1040 0%,var(--bg) 60%);}
+.theme-ivory .full-screen{background:radial-gradient(ellipse at 70% 80%,#e0d5c5 0%,var(--bg) 60%);}
+
+/* ── 로딩 ── */
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top:3px solid var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── 로그인 박스 ── */
+.login-wrap{display:flex;flex-direction:column;align-items:center;gap:28px;width:100%;max-width:380px;}
+.logo{text-align:center;}
+.logo h1{font-size:clamp(2.4rem,8vw,3.8rem);font-weight:900;letter-spacing:-2px;background:linear-gradient(135deg,var(--accent),var(--accent2),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:'DM Mono',monospace;}
+.logo p{color:var(--text2);font-size:0.82rem;margin-top:6px;letter-spacing:3px;text-transform:uppercase;}
+.pw-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:36px 40px;width:100%;display:flex;flex-direction:column;gap:18px;}
+.pw-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--text);font-size:1rem;font-family:inherit;outline:none;transition:border-color 0.2s;}
+.pw-input:focus{border-color:var(--accent);}
+.pw-input.pw-style{letter-spacing:4px;}
+.pw-btn{width:100%;padding:14px;border-radius:12px;border:none;background:var(--accent);color:white;font-size:1rem;font-weight:600;transition:all 0.2s;}
+.pw-btn:hover{opacity:0.85;}
+.pw-btn.secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.pw-btn.secondary:hover{border-color:var(--accent);color:var(--text);}
+.pw-error{color:#f76a6a;font-size:0.8rem;text-align:center;display:none;}
+.save-login-row{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+.save-login-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+.save-login-row span{font-size:0.82rem;color:var(--text2);}
+.divider{display:flex;align-items:center;gap:10px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.divider span{font-size:0.75rem;color:var(--text2);}
+
+/* ── 프로필 생성 ── */
+#create-profile-screen{display:none;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;padding:24px;gap:20px;background:radial-gradient(ellipse at 30% 20%,#1a1040 0%,var(--bg) 60%);overflow-y:auto;}
+.theme-ivory #create-profile-screen{background:radial-gradient(ellipse at 30% 20%,#e0d5c5 0%,var(--bg) 60%);}
+.create-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:20px;}
+.form-group{display:flex;flex-direction:column;gap:8px;}
+.form-label{font-size:0.8rem;color:var(--text2);}
+.form-hint{font-size:0.72rem;color:var(--accent3);margin-top:2px;}
+.form-input{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:0.95rem;font-family:inherit;outline:none;transition:border-color 0.2s;}
+.form-input:focus{border-color:var(--accent);}
+.gender-select{display:flex;gap:10px;}
+.gender-btn{flex:1;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:inherit;transition:all 0.2s;font-size:0.9rem;}
+.gender-btn.active{border-color:var(--accent);color:var(--text);background:rgba(124,106,247,0.15);}
+</style>
+<script src="common_core.js"></script>
+</head>
+<body>
+
+<!-- ══════════ 로딩 ══════════ -->
+<div id="loading-screen" class="full-screen">
+  <div class="spinner"></div>
+  <p style="color:var(--text2);font-size:0.85rem;margin-top:8px;">자동 로그인 중...</p>
+</div>
+
+<!-- ══════════ 로그인 ══════════ -->
+<div id="login-screen" class="full-screen">
+  <div class="login-wrap">
+    <div class="logo">
+      <h1>somi_ssam</h1>
+      <p>Vocal Practice System</p>
+    </div>
+    <div class="pw-box">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <input type="text" class="pw-input" id="login-name" placeholder="이름 입력"
+          autocomplete="username"
+          onkeydown="if(event.key==='Enter')document.getElementById('login-pw').focus()">
+        <input type="password" class="pw-input pw-style" id="login-pw" placeholder="비밀번호"
+          autocomplete="current-password"
+          maxlength="20" onkeydown="if(event.key==='Enter')checkLogin()">
+      </div>
+      <label class="save-login-row">
+        <input type="checkbox" id="save-login-check">
+        <span>로그인 저장 (자동 로그인)</span>
+      </label>
+      <div class="pw-error" id="login-error">이름 또는 비밀번호가 틀렸어요</div>
+      <button class="pw-btn" onclick="checkLogin()">로그인</button>
+      <div class="divider"><span>처음 오셨나요?</span></div>
+      <button class="pw-btn secondary" onclick="showCreateProfile()">+ 새 프로필 만들기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 프로필 생성 ══════════ -->
+<div id="create-profile-screen">
+  <div class="create-box">
+    <h2>프로필 만들기</h2>
+    <div class="form-group">
+      <div class="form-label">이름 (본명)</div>
+      <input type="text" class="form-input" id="new-name" placeholder="✏️ 한글로 이름을 입력하세요" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <div class="form-label">성별</div>
+      <div class="gender-select">
+        <button class="gender-btn" id="gbtn-f" onclick="selectGender('female')">여자</button>
+        <button class="gender-btn" id="gbtn-m" onclick="selectGender('male')">남자</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">생년월일</div>
+      <input type="text" class="form-input" id="new-birth" inputmode="numeric" autocomplete="off" placeholder="예: 1993.05.13" maxlength="10" oninput="_onBirthInput(this)">
+      <input type="hidden" id="new-birth-value">
+    </div>
+    <div class="form-group">
+      <div class="form-label">비밀번호 설정</div>
+      <input type="password" class="form-input" id="new-pw" placeholder="비밀번호를 설정하세요" maxlength="20" autocomplete="new-password">
+    </div>
+    <div class="pw-error" id="create-error">이름, 성별, 생년월일, 비밀번호를 모두 입력해주세요</div>
+    <div id="create-duplicate-error" class="pw-error">이미 같은 이름의 프로필이 있어요</div>
+    <div id="create-loading" style="display:none;text-align:center;font-size:0.82rem;color:var(--text2);">저장 중...</div>
+    <button class="pw-btn" id="create-btn" onclick="createProfile()">프로필 생성</button>
+    <button class="pw-btn secondary" onclick="showScreen('login-screen')">← 뒤로</button>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════
+   헬퍼 — 저장/불러오기는 common_core.js의 공용 window.saveData/window.loadData 사용.
+   ★ 이 페이지(로그인 입구)의 특수조건을 공용 기능으로 살린다:
+     · __SOMI_NO_SERVER=true → saveData로는 서버 전송 안 함. 명단·패턴잠금·세션은
+       기존대로 _fsSet/safePutProfiles로 따로 보내고, 자동로그인 토큰은 서버 금지.
+       (이 페이지의 _fsSet은 지역변수라 공용이 못 보지만, 의도를 깃발로 분명히 박아둠)
+     · 공용 loadData의 배열 타입방어 → 깨진 명단(somi_profiles)이 흘러가는 것 차단.
+   ※ 공용이 없을 만일의 경우 폴백 — 기존 index 동작(전송없음·타입방어)과 동일. */
+window.__SOMI_NO_SERVER = true;
+if (typeof window.loadData !== 'function') {
+  window.loadData = function(k,d){
+    try{const v=localStorage.getItem(k);if(v===null)return d;const p=JSON.parse(v);if(Array.isArray(d)&&!Array.isArray(p)){localStorage.removeItem(k);return d;}return p;}catch(e){return d;}
+  };
+}
+if (typeof window.saveData !== 'function') {
+  window.saveData = function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+}
+
+
+/* ════════════════════════════════════
+   안전 저장 가드 (사고 방지 핵심)
+   - 명단(profiles)을 Firebase에 올리기 전 반드시 통과해야 함
+   - 빈 배열이거나, 기존보다 줄어든 명단이면 저장 거부
+════════════════════════════════════ */
+async function safePutProfiles(newProfiles, getDocFn, docFn, dbRef, setDocFn){
+  // 1) 빈/비정상 데이터 차단
+  if(!Array.isArray(newProfiles) || newProfiles.length===0){
+    console.error('🛑 안전가드: 빈 명단 저장 시도 차단됨');
+    return {ok:false, reason:'empty'};
+  }
+  // 2) Firebase 최신 명단과 비교 — 줄어들면 차단
+  let remote=[];
+  try{
+    const snap=await getDocFn(docFn(dbRef,'somi_data','somi_profiles'));
+    if(snap.exists()) remote=JSON.parse(snap.data().value)||[];
+  }catch(e){ /* 네트워크 실패 시엔 비교 생략 */ }
+  if(remote.length > newProfiles.length){
+    console.error('🛑 안전가드: 명단 축소 감지 (기존 '+remote.length+'명 → 신규 '+newProfiles.length+'명) 저장 차단');
+    return {ok:false, reason:'shrink', remote};
+  }
+  // 3) 저장 직전 백업 후 저장
+  try{
+    await setDocFn(docFn(dbRef,'somi_data','somi_profiles_backup_'+Date.now()), {value:JSON.stringify(remote.length?remote:newProfiles)});
+  }catch(e){}
+  await setDocFn(docFn(dbRef,'somi_data','somi_profiles'), {value:JSON.stringify(newProfiles)});
+  return {ok:true};
+}
+
+/* ── 테마 ── */
+const currentTheme=loadData('somi_theme','dark');
+if(currentTheme==='ivory') document.body.classList.add('theme-ivory');
+
+/* ── 전역 ── */
+let profiles=[];
+let _fsSet=null;
+let _fbHandle=null;  // {db, doc, getDoc, setDoc} — 안전가드용 Firebase 핸들 보관
+const teacherPw=()=>loadData('somi_teacher_pw','1');
+// 기기 영구 식별자 — 로그아웃해도 지워지지 않음(자동로그인 토큰과 분리).
+// 자동로그인 토큰은 로그아웃 때마다 사라져서, 토큰만으로 "같은 기기"를 구분하면
+// 로그아웃→재로그인할 때마다 새 기기로 오인식돼 목록에 중복 쌓이는 문제가 있었음.
+function getDeviceUid(){
+  try{
+    let uid=localStorage.getItem('somi_device_uid');
+    if(!uid){ uid='dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2); localStorage.setItem('somi_device_uid',uid); }
+    return uid;
+  }catch(e){ return 'dev_fallback'; }
+}
+
+/* ── 자동 로그인 키 ── */
+const STUDENT_AUTO_KEY='somi_student_auto_login';  // 학생: {name, id}
+const TEACHER_AUTO_KEY='somi_teacher_auto_login';  // 선생님: {token, deviceName, registeredAt}
+
+/* ════════════════════════════════════
+   화면 전환
+════════════════════════════════════ */
+function showScreen(id){
+  ['loading-screen','login-screen','create-profile-screen']
+    .forEach(s=>{const el=document.getElementById(s);if(el)el.style.display='none';});
+  const t=document.getElementById(id); if(!t) return;
+  t.style.display='flex';
+
+  if(id==='login-screen'){
+    const saved=loadData(STUDENT_AUTO_KEY,null);
+    if(saved&&saved.name){
+      document.getElementById('login-name').value=saved.name;
+      document.getElementById('save-login-check').checked=true;
+      setTimeout(()=>document.getElementById('login-pw').focus(),100);
+    } else {
+      document.getElementById('login-name').value='';
+      document.getElementById('login-pw').value='';
+      document.getElementById('save-login-check').checked=false;
+      setTimeout(()=>document.getElementById('login-name').focus(),100);
+    }
+    document.getElementById('login-error').style.display='none';
+  }
+}
+
+/* ════════════════════════════════════
+   통합 로그인
+════════════════════════════════════ */
+async function checkLogin(){
+  const inputName=document.getElementById('login-name').value.trim();
+  const inputPw=document.getElementById('login-pw').value;
+  const saveFlag=document.getElementById('save-login-check').checked;
+  const errEl=document.getElementById('login-error');
+  errEl.style.display='none';
+
+  if(!inputName||!inputPw){
+    errEl.textContent='이름과 비밀번호를 입력해주세요';
+    errEl.style.display='block';
+    return;
+  }
+
+  // ── 선생님 로그인 (이름 '소미쌤' + 비번 일치) ──
+  if(inputName==='소미쌤'&&inputPw===teacherPw()){
+    if(saveFlag){
+      const ua=navigator.userAgent;
+      const isIpadOS=/Macintosh/.test(ua)&&navigator.maxTouchPoints>1;
+      let deviceName='📱 알 수 없는 기기';
+      if(/iPhone/.test(ua)) deviceName='📱 iPhone · Safari';
+      else if(/iPad/.test(ua)||isIpadOS) deviceName='📱 iPad · Safari';
+      else if(/Android.*Chrome/.test(ua)) deviceName='🤖 Android · Chrome';
+      else if(/Android/.test(ua)) deviceName='🤖 Android · 브라우저';
+      else if(/Macintosh/.test(ua)&&/Chrome/.test(ua)) deviceName='💻 MacBook · Chrome';
+      else if(/Macintosh/.test(ua)) deviceName='💻 MacBook · Safari';
+      else if(/Windows.*Chrome/.test(ua)) deviceName='🖥️ Windows · Chrome';
+      else if(/Windows/.test(ua)) deviceName='🖥️ Windows · 브라우저';
+      // 이미 이 기기에 등록된 토큰이 있으면 재사용 — 없을 때만 새로 발급
+      // (매번 새 토큰을 만들면 같은 기기가 재로그인할 때마다 "새 기기"로 중복 등록됨 — 버그 원인)
+      const existingAuto=loadData(TEACHER_AUTO_KEY,null);
+      const token=existingAuto?.token || (Date.now().toString(36)+'_'+Math.random().toString(36).slice(2));
+      const deviceUid=getDeviceUid();
+      saveData(TEACHER_AUTO_KEY,{token,deviceName,registeredAt:new Date().toISOString(),deviceUid});
+      await registerTeacherDevice(deviceUid,token,deviceName);
+    }
+    localStorage.setItem('somi_role','teacher');
+    window.location.href='somi_ssam_home.html?mode=teacher';
+    return;
+  }
+
+  // ── 학생 로그인 ──
+  const found=profiles.find(p=>p.name.trim()===inputName&&p.password===inputPw);
+  if(!found){
+    errEl.textContent='이름 또는 비밀번호가 틀렸어요';
+    errEl.style.display='block';
+    document.getElementById('login-pw').value='';
+    document.getElementById('login-pw').focus();
+    return;
+  }
+  // 학생 로그인 시 선생님 자동 로그인 키 및 role 제거
+  localStorage.removeItem(TEACHER_AUTO_KEY);
+  localStorage.removeItem('somi_role');
+  if(saveFlag) saveData(STUDENT_AUTO_KEY,{name:found.name,id:found.id});
+  else localStorage.removeItem(STUDENT_AUTO_KEY);
+  localStorage.setItem('somi_current_profile_id',found.id);
+
+  // ── 학생 세션 등록 (기기 감지 + Firebase 저장 → 기존 기기 자동 로그아웃) ──
+  const sToken=Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
+  const sua=navigator.userAgent;
+  const sIpadOS=/Macintosh/.test(sua)&&navigator.maxTouchPoints>1;
+  let sDeviceName='📱 알 수 없는 기기';
+  if(/iPhone/.test(sua)) sDeviceName='📱 iPhone · Safari';
+  else if(/iPad/.test(sua)||sIpadOS) sDeviceName='📱 iPad · Safari';
+  else if(/Android.*Chrome/.test(sua)) sDeviceName='🤖 Android · Chrome';
+  else if(/Android/.test(sua)) sDeviceName='🤖 Android · 브라우저';
+  else if(/Macintosh/.test(sua)&&/Chrome/.test(sua)) sDeviceName='💻 MacBook · Chrome';
+  else if(/Macintosh/.test(sua)) sDeviceName='💻 MacBook · Safari';
+  else if(/Windows.*Chrome/.test(sua)) sDeviceName='🖥️ Windows · Chrome';
+  else if(/Windows/.test(sua)) sDeviceName='🖥️ Windows · 브라우저';
+  const sessionEntry={token:sToken,deviceName:sDeviceName,loginAt:new Date().toISOString()};
+  saveData('somi_student_session_'+found.id, sessionEntry);
+  // ── [F-2 핵심] 서버에 새 토큰 저장을 '반드시 완료'한 뒤 student로 이동 ──
+  // Firebase(_fsSet) 준비 전에 학생이 로그인을 누르면 서버 토큰이 안 바뀌어,
+  // 기존 기기가 영원히 차이를 못 느껴 강제 로그아웃이 안 됨 → 준비될 때까지 잠깐 대기.
+  let _saved=false;
+  for(let i=0;i<30 && !_saved;i++){            // 최대 약 4.5초 대기 (150ms×30)
+    if(_fsSet){
+      try{ await _fsSet('somi_student_session_'+found.id, JSON.stringify(sessionEntry)); _saved=true; }
+      catch(e){ /* 일시 실패 → 잠깐 뒤 재시도 */ }
+    }
+    if(!_saved) await new Promise(r=>setTimeout(r,150));
+  }
+  // 끝내 저장 못 하면(오프라인 등) 그냥 진행 — 로컬 토큰은 이미 저장됨
+
+  window.location.href='somi_ssam_student.html';
+}
+
+async function registerTeacherDevice(deviceUid,token,deviceName){
+  if(!_fsSet) return;
+  try{
+    const devicesJson=localStorage.getItem('somi_teacher_devices')||'[]';
+    let devices=JSON.parse(devicesJson);
+    // deviceUid로 우선 매칭. 예전 데이터(과도기, deviceUid 없음)는 token으로 폴백 매칭.
+    const existing=devices.findIndex(d=>d.deviceUid?d.deviceUid===deviceUid:d.token===token);
+    const entry={deviceUid,token,deviceName,registeredAt:new Date().toISOString()};
+    if(existing>=0) devices[existing]=entry;
+    else devices.push(entry);
+    const json=JSON.stringify(devices);
+    localStorage.setItem('somi_teacher_devices',json);
+    await _fsSet('somi_teacher_devices',json);
+  }catch(e){}
+}
+
+/* ════════════════════════════════════
+   프로필 생성
+════════════════════════════════════ */
+let selectedGender='';
+
+function showCreateProfile(){
+  document.getElementById('new-name').value='';
+  document.getElementById('new-pw').value='';
+  document.getElementById('new-birth').value='';
+  document.getElementById('new-birth-value').value='';
+  selectedGender='';
+  document.getElementById('gbtn-f').classList.remove('active');
+  document.getElementById('gbtn-m').classList.remove('active');
+  document.getElementById('create-error').style.display='none';
+  document.getElementById('create-duplicate-error').style.display='none';
+  document.getElementById('create-loading').style.display='none';
+  document.getElementById('create-btn').disabled=false;
+  showScreen('create-profile-screen');
+  setTimeout(()=>document.getElementById('new-name').focus(),100);
+}
+
+/* ── 생년월일 숫자 입력: 8자리(YYYYMMDD) 입력 → 화면엔 1993.05.13, 저장은 1993-05-13 ── */
+function _onBirthInput(el){
+  // 공통 코어(common_core: parseNumericDate) 사용 — 점삽입/검증 1벌 공유
+  const r = (typeof window.parseNumericDate==='function')
+    ? window.parseNumericDate(el.value)
+    : (function(){var d=el.value.replace(/[^0-9]/g,'').slice(0,8);return {shown:d,iso:''};})();
+  el.value = r.shown;
+  const hid = document.getElementById('new-birth-value');
+  if(hid) hid.value = r.iso;
+}
+
+function selectGender(g){
+  selectedGender=g;
+  document.getElementById('gbtn-f').classList.toggle('active',g==='female');
+  document.getElementById('gbtn-m').classList.toggle('active',g==='male');
+}
+
+async function createProfile(){
+  const name=document.getElementById('new-name').value.trim();
+  const pw=document.getElementById('new-pw').value;
+  const birth=document.getElementById('new-birth-value').value||''; // 변환된 YYYY-MM-DD (필수)
+  document.getElementById('create-error').style.display='none';
+  document.getElementById('create-duplicate-error').style.display='none';
+
+  if(!name||!selectedGender||!pw||!birth){document.getElementById('create-error').style.display='block';return;}
+
+  document.getElementById('create-btn').disabled=true;
+  document.getElementById('create-loading').style.display='block';
+  somiShowLoading('프로필 만드는 중...');
+
+  // ★★ 사고 방지 핵심 ★★
+  // 저장 직전에 Firebase에서 "최신 명단"을 다시 받아온다.
+  // (진입 동기화가 덜 끝났더라도 여기서 한 번 더 확실히 받아옴)
+  let base=loadData('somi_profiles',[]);
+  if(_fbHandle){
+    try{
+      const snap=await _fbHandle.getDoc(_fbHandle.doc(_fbHandle.db,'somi_data','somi_profiles'));
+      if(snap.exists()){
+        const remote=JSON.parse(snap.data().value)||[];
+        // 최신 원격 명단을 기준으로 삼는다 (로컬이 비어있어도 안전)
+        if(remote.length>=base.length) base=remote;
+      }
+    }catch(e){ console.warn('최신 명단 조회 실패, 로컬 기준 진행:',e); }
+  }
+
+  // 중복 이름 검사 (최신 명단 기준)
+  if(base.find(p=>p.name.trim()===name)){
+    document.getElementById('create-duplicate-error').style.display='block';
+    document.getElementById('create-btn').disabled=false;
+    document.getElementById('create-loading').style.display='none';
+    somiHideLoading();
+    return;
+  }
+
+  const newId=Date.now().toString();
+  const newProfile={
+    id:newId,
+    name,
+    gender:selectedGender,
+    password:pw,
+    birth,           // ★ 생년월일
+    stamp:'apple',
+    createdAt:new Date().toISOString()
+  };
+  // 최신 명단에 신규만 "추가(merge)" — 통째 덮어쓰기가 아님
+  const updatedProfiles=[...base,newProfile];
+
+  // ★ 신규 프로필: 모든 패턴을 잠금(false)으로 초기화
+  const locks=loadData('somi_pattern_locks',{});
+  const allPatterns=[
+    ...JSON.parse(localStorage.getItem('somi_breath_patterns')||'[]'),
+    ...JSON.parse(localStorage.getItem('somi_vocal_patterns')||'[]'),
+    ...JSON.parse(localStorage.getItem('somi_rhythm_patterns')||'[]'),
+  ];
+  locks[newId]={};
+  allPatterns.forEach(pat=>{ locks[newId][pat.id]=false; });
+
+  // ── Firebase 저장: 안전가드 통과 필수 ──
+  if(_fbHandle){
+    const result=await safePutProfiles(updatedProfiles, _fbHandle.getDoc, _fbHandle.doc, _fbHandle.db, _fbHandle.setDoc);
+    if(!result.ok){
+      // 가드가 막음 — 사용자에게 안내하고 중단 (데이터 보호 우선)
+      somiHideLoading();
+      document.getElementById('create-btn').disabled=false;
+      document.getElementById('create-loading').style.display='none';
+      alert('일시적인 연결 문제로 프로필 저장을 안전하게 중단했어요.\n잠시 후 다시 시도해 주세요. (기존 데이터는 그대로 보호됨)');
+      return;
+    }
+    try{ await _fsSet('somi_pattern_locks',JSON.stringify(locks)); }catch(e){}
+  }
+
+  // 로컬도 갱신 (Firebase 저장 성공 후)
+  saveData('somi_profiles',updatedProfiles);
+  saveData('somi_pattern_locks',locks);
+  profiles=updatedProfiles;
+
+  saveData(STUDENT_AUTO_KEY,{name:newProfile.name,id:newProfile.id});
+  localStorage.setItem('somi_current_profile_id',newId);
+  window.location.href='somi_ssam_student.html';
+}
+
+/* ════════════════════════════════════
+   DOMContentLoaded — Firebase + 자동로그인
+════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded',async function(){
+  // 오버레이는 HTML에 처음부터 떠 있음(커튼 먼저). 여기선 데이터를 받을 때까지 기다린 뒤 걷는다.
+  somiStartSlowTimer();  // 25초 이상 느리면 비상구 안내 노출
+  showScreen('loading-screen');
+
+  // 비상구 버튼이 눌리면 재시도 중단하고 로컬 데이터로 진행
+  let _offlineForced=false;
+  somiHideLoading = (function(orig){
+    return function(){ _offlineForced=true; orig(); };
+  })(somiHideLoading);
+
+  // Firebase 초기화 + 동기화 (성공할 때까지 자동 재시도)
+  let _syncOk=false;
+  while(!_offlineForced && !_syncOk){
+    try{
+      const{initializeApp,getApps}=await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js");
+      const{getFirestore,doc,getDoc,setDoc}=await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js");
+      const FB_CONFIG={apiKey:"AIzaSyCgCdb1pNtcTxEp7APdUW-aeOsJ33v1IhI",authDomain:"somi-ssam.firebaseapp.com",projectId:"somi-ssam",storageBucket:"somi-ssam.firebasestorage.app",messagingSenderId:"841594074779",appId:"1:841594074779:web:c37fd00db5a8883cf0f83e"};
+      const APP_NAME='somi-index-v2';
+      const fbApp=getApps().find(a=>a.name===APP_NAME)||initializeApp(FB_CONFIG,APP_NAME);
+      const fsDb=getFirestore(fbApp);
+      _fsSet=async(k,j)=>{await setDoc(doc(fsDb,'somi_data',k),{value:j});};
+      _fbHandle={db:fsDb, doc, getDoc, setDoc};  // 안전가드용 핸들 보관
+
+      const SYNC_KEYS=['somi_profiles','somi_pattern_locks','somi_teacher_pw','somi_teacher_devices'];
+      await Promise.all(SYNC_KEYS.map(async k=>{
+        const snap=await getDoc(doc(fsDb,'somi_data',k));if(snap.exists())localStorage.setItem(k,snap.data().value);
+      }));
+      profiles=loadData('somi_profiles',[]);
+      _syncOk=true;
+    }catch(e){
+      console.warn('index Firebase 동기화 재시도:',e.message);
+      await new Promise(r=>setTimeout(r,1500));
+    }
+  }
+  if(!_syncOk) profiles=loadData('somi_profiles',[]); // 비상구로 빠진 경우 로컬 사용
+
+  // Firebase 완료 후 — 자동 로그인 체크
+  // ── 선생님 자동 로그인 ──
+  const tAuto=loadData(TEACHER_AUTO_KEY,null);
+  if(tAuto?.token){
+    try{
+      const devices=loadData('somi_teacher_devices',[]);
+      const isValid=devices.some(d=>d.token===tAuto.token);
+      if(isValid){
+        localStorage.setItem('somi_role','teacher');
+        window.location.href='somi_ssam_home.html?mode=teacher';
+        return;
+      } else {
+        localStorage.removeItem(TEACHER_AUTO_KEY);
+      }
+    }catch(e){
+      localStorage.setItem('somi_role','teacher');
+      window.location.href='somi_ssam_home.html?mode=teacher';
+      return;
+    }
+  }
+
+  // ── 학생 자동 로그인 ──
+  const sAuto=loadData(STUDENT_AUTO_KEY,null);
+  if(sAuto?.id){
+    const found=profiles.find(p=>p.id===sAuto.id);
+    if(found){
+      localStorage.removeItem('somi_role');
+      localStorage.setItem('somi_current_profile_id',found.id);
+      window.location.href='somi_ssam_student.html';
+      return;
+    } else {
+      localStorage.removeItem(STUDENT_AUTO_KEY);
+    }
+  }
+
+  // 자동 로그인 없으면 로그인 화면
+  somiHideLoading();
+  showScreen('login-screen');
+});
+</script>
+</body>
+</html>
